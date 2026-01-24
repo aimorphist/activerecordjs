@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git worktree:*)"
+      "Bash(git worktree:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
