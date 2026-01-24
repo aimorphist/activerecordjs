@@ -248,28 +248,28 @@ user.errors;              // after failed validation: { email: ['is invalid'], .
 
 ## Milestones
 
-### AR1: Foundation
+### AR1: Foundation ✅
 
 > Core infrastructure and basic CRUD
 
-- [ ] `Model()` base class factory
-- [ ] Convention detection (table name, primary key, timestamps)
-- [ ] `find()`, `findBy()`, `all()`, `first()`, `last()`
-- [ ] `create()`, `save()`, `update()`, `destroy()`
-- [ ] Auto-managed `updated_at` on save
-- [ ] Basic error types
+- [x] `Model()` base class factory
+- [x] Convention detection (table name, primary key, timestamps)
+- [x] `find()`, `findBy()`, `all()`, `first()`, `last()`
+- [x] `create()`, `save()`, `update()`, `destroy()`
+- [x] Auto-managed `updated_at` on save
+- [x] Basic error types
 
 **Acceptance:** Can create, read, update, delete records with minimal config.
 
-### AR2: Query Builder
+### AR2: Query Builder ✅
 
 > Chainable query interface
 
-- [ ] `where()` with hash and raw SQL support
-- [ ] `order()`, `limit()`, `offset()`
-- [ ] `count()`, `exists()`
-- [ ] `findOrCreate()`, `firstOrCreate()`
-- [ ] Drizzle escape hatch
+- [x] `where()` with hash and raw SQL support
+- [x] `order()`, `limit()`, `offset()`
+- [x] `count()`, `exists()`
+- [x] `findOrCreate()`, `firstOrCreate()`
+- [x] Drizzle escape hatch
 
 **Acceptance:** Can build complex queries with chaining.
 

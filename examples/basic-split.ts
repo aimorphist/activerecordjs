@@ -17,12 +17,12 @@
 
 import { createBagpipe } from '../src/lib/bagpipe';
 
-// Replace these with actual devnet wallet addresses
-const CONTROLLER = 'YOUR_CONTROLLER_WALLET_PUBKEY';
-const ESCROW = 'YOUR_ESCROW_WALLET_PUBKEY';
-const DEST_1 = 'DESTINATION_1_PUBKEY'; // 50%
-const DEST_2 = 'DESTINATION_2_PUBKEY'; // 30%
-const DEST_3 = 'DESTINATION_3_PUBKEY'; // 20%
+// Devnet test wallets
+const ESCROW = 'CfvMHKJD8xDGM41jun7yDPTweUivJeapVzNpgrcMksw6';
+const CONTROLLER = ESCROW; // Use escrow as controller for simplicity
+const DEST_1 = 'BVcBoujUZKqbR4PPCZLg5dD6gW7t43zodqwsx2Q2HAUb'; // 50%
+const DEST_2 = '2AYqChc3owmwcaySkxmkSzqcXFc35e4U4X3QpPSyrMZQ'; // 30%
+const DEST_3 = 'EBba14yitFvjoVuTVKxUrPwUjCwVVu7yzSCp7C78edVd'; // 20%
 
 async function main() {
 	console.log('🎵 Bagpipe Basic Split Example\n');
@@ -48,20 +48,15 @@ async function main() {
 	console.log(`  Escrow: ${pipe.escrowWallet}`);
 	console.log(`  Destinations: 50% / 30% / 20%\n`);
 
-	// Note: You need to set ESCROW_KEY_<pipeId> in your environment
-	// with the base58-encoded secret key for the escrow wallet
-	console.log(`ℹ️  To trigger, set env var: ESCROW_KEY_${pipe.id}`);
-	console.log('   with the base58 secret key for the escrow wallet.\n');
-
-	// Uncomment to trigger after funding the escrow:
-	// console.log('Triggering pipe...');
-	// const executionId = await bagpipe.trigger(pipe.id);
-	// console.log(`✓ Execution completed: ${executionId}`);
+	// Trigger the pipe
+	console.log('Triggering pipe...');
+	const executionId = await bagpipe.trigger(pipe.id);
+	console.log(`✓ Execution completed: ${executionId}\n`);
 
 	// Check execution details
-	// const execution = await bagpipe.executions.find(executionId);
-	// console.log('Distributions:', execution.distributions);
-	// console.log('TX Signatures:', execution.txSignatures);
+	const execution = await bagpipe.executions.find(executionId);
+	console.log('Distributions:', JSON.stringify(execution.distributions, null, 2));
+	console.log('TX Signatures:', execution.txSignatures);
 }
 
 main().catch(console.error);

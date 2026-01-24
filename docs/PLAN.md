@@ -77,10 +77,10 @@ Example functions     Escape hatch
 
 ### Deliverables
 
-- [ ] Pipe CRUD operations
-- [ ] Static decider implementation
-- [ ] Execution engine (decide → execute → record)
-- [ ] Manual trigger API
+- [x] Pipe CRUD operations
+- [x] Static decider implementation
+- [x] Execution engine (decide → execute → record)
+- [x] Manual trigger API
 
 ### Tasks
 
@@ -101,10 +101,12 @@ Example functions     Escape hatch
 
 ### Acceptance Criteria
 
-- [ ] Can create pipe with 3 destinations
-- [ ] Manual trigger distributes SOL correctly
-- [ ] Execution recorded in DB with status
-- [ ] `examples/basic-split.ts` runs against devnet
+- [x] Can create pipe with 3 destinations
+- [x] Manual trigger distributes SOL correctly
+- [x] Execution recorded in DB with status
+- [x] `examples/basic-split.ts` runs against devnet
+
+**Note:** Fee reservation for multi-transfer transactions is a known refinement needed.
 
 ### Dependencies
 

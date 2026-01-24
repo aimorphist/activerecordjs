@@ -10,7 +10,9 @@
       "WebFetch(domain:orm.drizzle.team)",
       "Bash(for i in 1 2 3)",
       "Bash(do echo \"Run $i:\")",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(solana balance:*)",
+      "Bash(bun -e:*)"
     ]
   }
 }
