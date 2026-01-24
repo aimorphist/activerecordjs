@@ -248,7 +248,7 @@ user.errors;              // after failed validation: { email: ['is invalid'], .
 
 ## Milestones
 
-### M1: Foundation
+### AR1: Foundation
 
 > Core infrastructure and basic CRUD
 
@@ -261,7 +261,7 @@ user.errors;              // after failed validation: { email: ['is invalid'], .
 
 **Acceptance:** Can create, read, update, delete records with minimal config.
 
-### M2: Query Builder
+### AR2: Query Builder
 
 > Chainable query interface
 
@@ -273,7 +273,7 @@ user.errors;              // after failed validation: { email: ['is invalid'], .
 
 **Acceptance:** Can build complex queries with chaining.
 
-### M3: Validations
+### AR3: Validations
 
 > Zod-based validation system
 
@@ -285,7 +285,7 @@ user.errors;              // after failed validation: { email: ['is invalid'], .
 
 **Acceptance:** Invalid records can't be saved, errors are accessible.
 
-### M4: Lifecycle Hooks
+### AR4: Lifecycle Hooks
 
 > Full hook system
 
@@ -297,7 +297,7 @@ user.errors;              // after failed validation: { email: ['is invalid'], .
 
 **Acceptance:** Can intercept any lifecycle event, hooks run in order.
 
-### M5: Associations (Core)
+### AR5: Associations (Core)
 
 > belongsTo and hasMany
 
@@ -309,7 +309,7 @@ user.errors;              // after failed validation: { email: ['is invalid'], .
 
 **Acceptance:** Can traverse and manipulate associations.
 
-### M6: Associations (Advanced)
+### AR6: Associations (Advanced)
 
 > hasOne, through, eager loading
 
@@ -320,7 +320,7 @@ user.errors;              // after failed validation: { email: ['is invalid'], .
 
 **Acceptance:** Complex associations work, no N+1 queries with includes.
 
-### M7: Transactions
+### AR7: Transactions
 
 > ACID guarantees
 
@@ -331,7 +331,7 @@ user.errors;              // after failed validation: { email: ['is invalid'], .
 
 **Acceptance:** Can wrap multiple operations in transactions.
 
-### M8: Scopes
+### AR8: Scopes
 
 > Reusable query fragments
 
@@ -351,7 +351,7 @@ await User.active.recent.all();
 
 **Acceptance:** Can define and chain reusable query fragments.
 
-### M9: Dirty Tracking (Optional)
+### AR9: Dirty Tracking (Optional)
 
 > Track attribute changes
 
@@ -453,14 +453,14 @@ tests/
 
 Each milestone's acceptance criteria includes passing tests:
 
-- **M1:** CRUD operations, convention detection
-- **M2:** Query builder chaining, all query methods
-- **M3:** Validation pass/fail, error messages, custom validators
-- **M4:** Hook execution order, abort behavior, async hooks
-- **M5-M6:** Association loading, creation, querying
-- **M7:** Transaction commit/rollback, nesting
-- **M8:** Scope application, chaining, unscoped
-- **M9:** Change detection, revert, hook integration
+- **AR1:** CRUD operations, convention detection
+- **AR2:** Query builder chaining, all query methods
+- **AR3:** Validation pass/fail, error messages, custom validators
+- **AR4:** Hook execution order, abort behavior, async hooks
+- **AR5-AR6:** Association loading, creation, querying
+- **AR7:** Transaction commit/rollback, nesting
+- **AR8:** Scope application, chaining, unscoped
+- **AR9:** Change detection, revert, hook integration
 
 ---
 
