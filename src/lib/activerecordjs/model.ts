@@ -3,6 +3,7 @@ import type { PgTable } from 'drizzle-orm/pg-core';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { getGlobalConnection, setGlobalConnection } from './connection';
 import { RecordNotFoundError } from './errors';
+import { QueryBuilder } from './query-builder';
 
 // Use 'any' liberally for metaprogramming per PRD: "TypeScript where helpful, any where necessary"
 
@@ -19,6 +20,24 @@ interface ModelClass<T extends PgTable> {
 	// 'new' is a reserved word, use bracket access or 'build' alias
 	['new'](attrs?: Record<string, unknown>): ModelInstanceType<T>;
 	build(attrs?: Record<string, unknown>): ModelInstanceType<T>;
+
+	// Query builder methods
+	where(conditions: Record<string, unknown>): QueryBuilder<T, ModelInstanceType<T>>;
+	where(sql: string, ...params: unknown[]): QueryBuilder<T, ModelInstanceType<T>>;
+	order(column: string, direction?: 'asc' | 'desc'): QueryBuilder<T, ModelInstanceType<T>>;
+	limit(n: number): QueryBuilder<T, ModelInstanceType<T>>;
+	offset(n: number): QueryBuilder<T, ModelInstanceType<T>>;
+	count(): Promise<number>;
+	exists(conditions?: Record<string, unknown>): Promise<boolean>;
+	findOrCreate(
+		findAttrs: Record<string, unknown>,
+		createAttrs?: Record<string, unknown>
+	): Promise<ModelInstanceType<T>>;
+	firstOrCreate(
+		findAttrs: Record<string, unknown>,
+		createAttrs?: Record<string, unknown>
+	): Promise<ModelInstanceType<T>>;
+	query<R>(fn: (table: T, db: PostgresJsDatabase) => Promise<R>): Promise<R>;
 
 	// Metadata
 	readonly table: T;
@@ -261,7 +280,96 @@ export function Model<T extends PgTable>(table: T): ModelClass<T> {
 		['new']: buildInstance,
 
 		// Alias for 'new' that doesn't conflict with reserved word
-		build: buildInstance
+		build: buildInstance,
+
+		// Query builder entry points
+		where(
+			conditionsOrSql: Record<string, unknown> | string,
+			...params: unknown[]
+		): QueryBuilder<T, ModelInstanceType<T>> {
+			const builder = new QueryBuilder(
+				table,
+				(data, persisted) => createInstance(ModelClass, data, persisted),
+				ModelClass
+			);
+			if (typeof conditionsOrSql === 'string') {
+				return builder.where(conditionsOrSql, ...params);
+			}
+			return builder.where(conditionsOrSql);
+		},
+
+		order(
+			column: string,
+			direction: 'asc' | 'desc' = 'asc'
+		): QueryBuilder<T, ModelInstanceType<T>> {
+			const builder = new QueryBuilder(
+				table,
+				(data, persisted) => createInstance(ModelClass, data, persisted),
+				ModelClass
+			);
+			return builder.order(column, direction);
+		},
+
+		limit(n: number): QueryBuilder<T, ModelInstanceType<T>> {
+			const builder = new QueryBuilder(
+				table,
+				(data, persisted) => createInstance(ModelClass, data, persisted),
+				ModelClass
+			);
+			return builder.limit(n);
+		},
+
+		offset(n: number): QueryBuilder<T, ModelInstanceType<T>> {
+			const builder = new QueryBuilder(
+				table,
+				(data, persisted) => createInstance(ModelClass, data, persisted),
+				ModelClass
+			);
+			return builder.offset(n);
+		},
+
+		async count(): Promise<number> {
+			const builder = new QueryBuilder(
+				table,
+				(data, persisted) => createInstance(ModelClass, data, persisted),
+				ModelClass
+			);
+			return builder.count();
+		},
+
+		async exists(conditions?: Record<string, unknown>): Promise<boolean> {
+			let builder = new QueryBuilder(
+				table,
+				(data, persisted) => createInstance(ModelClass, data, persisted),
+				ModelClass
+			);
+			if (conditions) {
+				builder = builder.where(conditions);
+			}
+			return builder.exists();
+		},
+
+		async findOrCreate(
+			findAttrs: Record<string, unknown>,
+			createAttrs: Record<string, unknown> = {}
+		): Promise<ModelInstanceType<T>> {
+			const existing = await ModelClass.findBy(findAttrs);
+			if (existing) return existing;
+			return ModelClass.create({ ...findAttrs, ...createAttrs });
+		},
+
+		async firstOrCreate(
+			findAttrs: Record<string, unknown>,
+			createAttrs: Record<string, unknown> = {}
+		): Promise<ModelInstanceType<T>> {
+			// Alias for findOrCreate (Rails naming)
+			return ModelClass.findOrCreate(findAttrs, createAttrs);
+		},
+
+		async query<R>(fn: (table: T, db: PostgresJsDatabase) => Promise<R>): Promise<R> {
+			const db = getGlobalConnection();
+			return fn(table, db);
+		}
 	};
 
 	return ModelClass;

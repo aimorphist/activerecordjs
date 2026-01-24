@@ -16,11 +16,11 @@
 		"test": "npm run test:unit -- --run && npm run test:e2e",
 		"test:e2e": "playwright test",
 		"test:integration": "vitest run --config vitest.integration.config.ts",
-		"db:test:up": "docker-compose up -d && sleep 2",
-		"db:test:down": "docker-compose down",
+		"db:test:migrate": "DATABASE_URL=${TEST_DATABASE_URL:-postgresql://localhost:5432/bagpipe_test} drizzle-kit migrate",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "drizzle-kit migrate",
 		"db:studio": "drizzle-kit studio",
+		"console": "bun scripts/console.ts",
 		"storybook": "storybook dev -p 6006",
 		"build-storybook": "storybook build"
 	},

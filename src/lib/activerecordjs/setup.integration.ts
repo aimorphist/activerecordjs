@@ -4,8 +4,9 @@ import { sql } from 'drizzle-orm';
 import { setGlobalConnection } from './connection';
 
 const connectionString =
+	process.env.TEST_DATABASE_URL ||
 	process.env.DATABASE_URL ||
-	'postgresql://activerecordjs:activerecordjs@localhost:5433/activerecordjs_test';
+	'postgresql://localhost:5432/bagpipe_test';
 
 let client: ReturnType<typeof postgres>;
 let db: PostgresJsDatabase;
@@ -15,9 +16,26 @@ export async function setupTestDb() {
 	db = drizzle(client);
 	setGlobalConnection(db);
 
-	// Create tables (matching fixtures/schema.ts)
+	await createTables();
+
+	return db;
+}
+
+export async function cleanupTestDb() {
+	try {
+		await db.execute(sql`TRUNCATE TABLE posts, users RESTART IDENTITY CASCADE`);
+	} catch {
+		// Tables might not exist if another test suite dropped them, recreate
+		await createTables();
+	}
+}
+
+async function createTables() {
+	await db.execute(sql`DROP TABLE IF EXISTS posts CASCADE`);
+	await db.execute(sql`DROP TABLE IF EXISTS users CASCADE`);
+
 	await db.execute(sql`
-    CREATE TABLE IF NOT EXISTS users (
+    CREATE TABLE users (
       id SERIAL PRIMARY KEY,
       name TEXT,
       email TEXT NOT NULL,
@@ -27,7 +45,7 @@ export async function setupTestDb() {
   `);
 
 	await db.execute(sql`
-    CREATE TABLE IF NOT EXISTS posts (
+    CREATE TABLE posts (
       id SERIAL PRIMARY KEY,
       title TEXT NOT NULL,
       body TEXT,
@@ -36,17 +54,11 @@ export async function setupTestDb() {
       updated_at TIMESTAMP DEFAULT NOW()
     )
   `);
-
-	return db;
-}
-
-export async function cleanupTestDb() {
-	await db.execute(sql`TRUNCATE TABLE posts, users RESTART IDENTITY CASCADE`);
 }
 
 export async function teardownTestDb() {
-	await db.execute(sql`DROP TABLE IF EXISTS posts`);
-	await db.execute(sql`DROP TABLE IF EXISTS users`);
+	await db.execute(sql`DROP TABLE IF EXISTS posts CASCADE`);
+	await db.execute(sql`DROP TABLE IF EXISTS users CASCADE`);
 	await client.end();
 }
 
