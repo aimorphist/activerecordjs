@@ -2,7 +2,12 @@
   "permissions": {
     "allow": [
       "Bash(git worktree:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(bun run lint)",
+      "Bash(git add:*)",
+      "Bash(bash scripts/spec_metadata.sh:*)",
+      "Bash(bun repl:*)",
+      "WebFetch(domain:orm.drizzle.team)"
     ]
   }
 }

@@ -7,7 +7,9 @@ export default defineConfig({
 		include: ['src/lib/activerecordjs/**/*.integration.{test,spec}.ts'],
 		testTimeout: 30000,
 		hookTimeout: 30000,
-		// Run test files sequentially to avoid database conflicts
+		// Run test files sequentially due to shared global DB connection.
+		// Within each file, tests use transaction-based isolation (fast rollback).
+		// True parallel execution would require per-file isolated connections.
 		fileParallelism: false
 	}
 });

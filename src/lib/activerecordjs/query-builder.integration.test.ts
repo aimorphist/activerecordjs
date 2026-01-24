@@ -1,5 +1,10 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
-import { setupTestDb, cleanupTestDb, teardownTestDb } from './setup.integration';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
+import {
+	setupTestDb,
+	teardownTestDb,
+	beginTestTransaction,
+	rollbackTestTransaction
+} from './setup.integration';
 import { Model } from './model';
 import { users } from './fixtures/schema';
 
@@ -16,11 +21,15 @@ describe('QueryBuilder Integration Tests', () => {
 	});
 
 	beforeEach(async () => {
-		await cleanupTestDb();
+		await beginTestTransaction();
 		// Seed test data
 		await User.create({ name: 'Alice', email: 'alice@example.com' });
 		await User.create({ name: 'Bob', email: 'bob@example.com' });
 		await User.create({ name: 'Charlie', email: 'charlie@example.com' });
+	});
+
+	afterEach(async () => {
+		await rollbackTestTransaction();
 	});
 
 	describe('where()', () => {

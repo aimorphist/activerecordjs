@@ -1,5 +1,10 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
-import { setupTestDb, cleanupTestDb, teardownTestDb } from './setup.integration';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
+import {
+	setupTestDb,
+	teardownTestDb,
+	beginTestTransaction,
+	rollbackTestTransaction
+} from './setup.integration';
 import { Model } from './model';
 import { RecordNotFoundError } from './errors';
 import { users } from './fixtures/schema';
@@ -17,7 +22,11 @@ describe('CRUD Integration Tests', () => {
 	});
 
 	beforeEach(async () => {
-		await cleanupTestDb();
+		await beginTestTransaction();
+	});
+
+	afterEach(async () => {
+		await rollbackTestTransaction();
 	});
 
 	describe('Create', () => {
@@ -46,7 +55,7 @@ describe('CRUD Integration Tests', () => {
 
 			expect(user.isNewRecord).toBe(false);
 			expect(user.isPersisted).toBe(true);
-			expect(user.id).toBe(1);
+			expect(user.id).toBeGreaterThan(0);
 		});
 
 		it('auto-generates timestamps on create', async () => {
@@ -60,21 +69,25 @@ describe('CRUD Integration Tests', () => {
 	});
 
 	describe('Read', () => {
+		let user1: Awaited<ReturnType<typeof User.create>>;
+		let user2: Awaited<ReturnType<typeof User.create>>;
+		let user3: Awaited<ReturnType<typeof User.create>>;
+
 		beforeEach(async () => {
-			await User.create({ name: 'User 1', email: 'user1@example.com' });
-			await User.create({ name: 'User 2', email: 'user2@example.com' });
-			await User.create({ name: 'User 3', email: 'user3@example.com' });
+			user1 = await User.create({ name: 'User 1', email: 'user1@example.com' });
+			user2 = await User.create({ name: 'User 2', email: 'user2@example.com' });
+			user3 = await User.create({ name: 'User 3', email: 'user3@example.com' });
 		});
 
 		it('find() returns record by id', async () => {
-			const user = await User.find(2);
+			const user = await User.find(user2.id as number);
 
-			expect(user.id).toBe(2);
+			expect(user.id).toBe(user2.id);
 			expect(user.name).toBe('User 2');
 		});
 
 		it('find() throws RecordNotFoundError for missing id', async () => {
-			await expect(User.find(999)).rejects.toThrow(RecordNotFoundError);
+			await expect(User.find(999999)).rejects.toThrow(RecordNotFoundError);
 		});
 
 		it('findBy() returns first matching record', async () => {
@@ -101,7 +114,7 @@ describe('CRUD Integration Tests', () => {
 			const user = await User.first();
 
 			expect(user).not.toBeNull();
-			expect(user!.id).toBe(1);
+			expect(user!.id).toBe(user1.id);
 			expect(user!.name).toBe('User 1');
 		});
 
@@ -109,12 +122,16 @@ describe('CRUD Integration Tests', () => {
 			const user = await User.last();
 
 			expect(user).not.toBeNull();
-			expect(user!.id).toBe(3);
+			expect(user!.id).toBe(user3.id);
 			expect(user!.name).toBe('User 3');
 		});
 
 		it('first() returns null for empty table', async () => {
-			await cleanupTestDb();
+			// Delete all seeded users to test empty case
+			const allUsers = await User.all();
+			for (const user of allUsers) {
+				await user.destroy();
+			}
 
 			const user = await User.first();
 

@@ -7,6 +7,7 @@
 The JavaScript ORM landscape is fragmented and frustrating. Coming from Rails, ActiveRecord was a thing of beauty - it made relational databases a joy to use. Everything else feels like manual SQL scattered through your code.
 
 **Bagpipe** brings Rails-style developer ergonomics to TypeScript:
+
 - Convention over configuration
 - Sensible defaults that just work
 - Beautiful, minimal API
@@ -29,15 +30,15 @@ We're not chasing TypeScript perfection. Metaprogramming requires `any` in place
 
 ## Conventions
 
-| Convention | Rule | Example |
-|------------|------|---------|
-| Table names | plural snake_case | `users`, `blog_posts` |
-| Model names | singular PascalCase | `User`, `BlogPost` |
-| Primary key | `id` column, always | `id: serial().primaryKey()` |
-| Foreign keys | `{singular}_id` | `user_id`, `post_id` |
-| Timestamps | `created_at`, `updated_at` | Auto-managed on save |
-| Soft delete | `deleted_at` (optional) | When present, auto-filtered |
-| Join tables | alphabetical: `posts_tags` | For many-to-many |
+| Convention   | Rule                       | Example                     |
+| ------------ | -------------------------- | --------------------------- |
+| Table names  | plural snake_case          | `users`, `blog_posts`       |
+| Model names  | singular PascalCase        | `User`, `BlogPost`          |
+| Primary key  | `id` column, always        | `id: serial().primaryKey()` |
+| Foreign keys | `{singular}_id`            | `user_id`, `post_id`        |
+| Timestamps   | `created_at`, `updated_at` | Auto-managed on save        |
+| Soft delete  | `deleted_at` (optional)    | When present, auto-filtered |
+| Join tables  | alphabetical: `posts_tags` | For many-to-many            |
 
 ---
 
@@ -50,21 +51,21 @@ We're not chasing TypeScript perfection. Metaprogramming requires `any` in place
 import { pgTable, serial, text, timestamp, integer } from 'drizzle-orm/pg-core';
 
 export const users = pgTable('users', {
-  id: serial('id').primaryKey(),
-  name: text('name'),
-  email: text('email').notNull(),
-  teamId: integer('team_id').references(() => teams.id),
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow(),
+	id: serial('id').primaryKey(),
+	name: text('name'),
+	email: text('email').notNull(),
+	teamId: integer('team_id').references(() => teams.id),
+	createdAt: timestamp('created_at').defaultNow(),
+	updatedAt: timestamp('updated_at').defaultNow()
 });
 
 export const posts = pgTable('posts', {
-  id: serial('id').primaryKey(),
-  title: text('title').notNull(),
-  body: text('body'),
-  userId: integer('user_id').references(() => users.id),
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow(),
+	id: serial('id').primaryKey(),
+	title: text('title').notNull(),
+	body: text('body'),
+	userId: integer('user_id').references(() => users.id),
+	createdAt: timestamp('created_at').defaultNow(),
+	updatedAt: timestamp('updated_at').defaultNow()
 });
 ```
 
@@ -75,30 +76,34 @@ import { users } from '../schema';
 import { z } from 'zod';
 
 export class User extends Model(users) {
-  // Associations
-  static belongsTo = {
-    team: () => Team,
-  };
+	// Associations
+	static belongsTo = {
+		team: () => Team
+	};
 
-  static hasMany = {
-    posts: () => Post,
-  };
+	static hasMany = {
+		posts: () => Post
+	};
 
-  // Validations (Zod schemas)
-  static validations = {
-    email: z.string().email(),
-    name: z.string().min(1).max(100).optional(),
-  };
+	// Validations (Zod schemas)
+	static validations = {
+		email: z.string().email(),
+		name: z.string().min(1).max(100).optional()
+	};
 
-  // Lifecycle hooks
-  static hooks = {
-    beforeSave: [
-      (user) => { user.email = user.email.toLowerCase(); }
-    ],
-    afterCreate: [
-      (user) => { sendWelcomeEmail(user.email); }
-    ],
-  };
+	// Lifecycle hooks
+	static hooks = {
+		beforeSave: [
+			(user) => {
+				user.email = user.email.toLowerCase();
+			}
+		],
+		afterCreate: [
+			(user) => {
+				sendWelcomeEmail(user.email);
+			}
+		]
+	};
 }
 ```
 
@@ -112,9 +117,9 @@ const user = User.new({ name: 'Duke', email: 'duke@example.com' });
 await user.save();
 
 // Read
-const user = await User.find(1);                          // by id, throws if not found
-const user = await User.findBy({ email: 'duke@...' });    // first match
-const users = await User.where({ active: true }).all();   // query
+const user = await User.find(1); // by id, throws if not found
+const user = await User.findBy({ email: 'duke@...' }); // first match
+const users = await User.where({ active: true }).all(); // query
 
 // Update
 user.name = 'New Name';
@@ -159,19 +164,19 @@ await User.query((table, db) => {
 
 ```typescript
 // belongsTo
-const team = await user.team;           // lazy load
-await user.team.reload();               // force reload
+const team = await user.team; // lazy load
+await user.team.reload(); // force reload
 
 // hasMany
-const posts = await user.posts;         // lazy load, returns array
-await user.posts.create({ title: '...' });  // create associated
-await user.posts.build({ title: '...' });   // build without saving
+const posts = await user.posts; // lazy load, returns array
+await user.posts.create({ title: '...' }); // create associated
+await user.posts.build({ title: '...' }); // build without saving
 await user.posts.count();
 await user.posts.where({ published: true }).all();
 
 // Eager loading (N+1 prevention)
 const users = await User.includes('posts', 'team').all();
-users[0].posts;  // already loaded, no query
+users[0].posts; // already loaded, no query
 ```
 
 ### Lifecycle Hooks
@@ -201,14 +206,15 @@ static hooks = {
 ```
 
 **Aborting from hooks:**
+
 ```typescript
 beforeSave: [
-  (user) => {
-    if (user.email.endsWith('@banned.com')) {
-      throw new Model.Abort('Banned email domain');
-    }
-  }
-]
+	(user) => {
+		if (user.email.endsWith('@banned.com')) {
+			throw new Model.Abort('Banned email domain');
+		}
+	}
+];
 ```
 
 ### Validations
@@ -243,6 +249,7 @@ user.errors;              // after failed validation: { email: ['is invalid'], .
 ## Milestones
 
 ### M1: Foundation
+
 > Core infrastructure and basic CRUD
 
 - [ ] `Model()` base class factory
@@ -255,6 +262,7 @@ user.errors;              // after failed validation: { email: ['is invalid'], .
 **Acceptance:** Can create, read, update, delete records with minimal config.
 
 ### M2: Query Builder
+
 > Chainable query interface
 
 - [ ] `where()` with hash and raw SQL support
@@ -266,6 +274,7 @@ user.errors;              // after failed validation: { email: ['is invalid'], .
 **Acceptance:** Can build complex queries with chaining.
 
 ### M3: Validations
+
 > Zod-based validation system
 
 - [ ] Field-level Zod validators
@@ -277,6 +286,7 @@ user.errors;              // after failed validation: { email: ['is invalid'], .
 **Acceptance:** Invalid records can't be saved, errors are accessible.
 
 ### M4: Lifecycle Hooks
+
 > Full hook system
 
 - [ ] All hooks: before/after validation, save, create, update, destroy
@@ -288,6 +298,7 @@ user.errors;              // after failed validation: { email: ['is invalid'], .
 **Acceptance:** Can intercept any lifecycle event, hooks run in order.
 
 ### M5: Associations (Core)
+
 > belongsTo and hasMany
 
 - [ ] `belongsTo` declaration and lazy loading
@@ -299,6 +310,7 @@ user.errors;              // after failed validation: { email: ['is invalid'], .
 **Acceptance:** Can traverse and manipulate associations.
 
 ### M6: Associations (Advanced)
+
 > hasOne, through, eager loading
 
 - [ ] `hasOne` association
@@ -309,6 +321,7 @@ user.errors;              // after failed validation: { email: ['is invalid'], .
 **Acceptance:** Complex associations work, no N+1 queries with includes.
 
 ### M7: Transactions
+
 > ACID guarantees
 
 - [ ] `Model.transaction()` block
@@ -319,6 +332,7 @@ user.errors;              // after failed validation: { email: ['is invalid'], .
 **Acceptance:** Can wrap multiple operations in transactions.
 
 ### M8: Scopes
+
 > Reusable query fragments
 
 - [ ] Named scopes on model
@@ -338,6 +352,7 @@ await User.active.recent.all();
 **Acceptance:** Can define and chain reusable query fragments.
 
 ### M9: Dirty Tracking (Optional)
+
 > Track attribute changes
 
 - [ ] `instance.changed()` - boolean, any changes?

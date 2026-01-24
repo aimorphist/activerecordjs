@@ -74,38 +74,38 @@ The fundamental unit. Represents a routing configuration.
 
 ```typescript
 interface Pipe {
-  id: string;                    // unique identifier (blake3 hash of config?)
-  name?: string;                 // human-readable
-  
-  // Custody
-  escrowWallet: PublicKey;       // PDA or injected wallet
-  controllerType: ControllerType;
-  controllerId: string;          // wallet pubkey | program id | mjolnir fn
-  
-  // Routing
-  decider: Decider;
-  destinations: Destination[];   // static fallback if decider fails
-  
-  // Execution
-  triggerMode: TriggerMode;
-  retryPolicy: RetryPolicy;
-  
-  // Metadata
-  createdAt: number;
-  updatedAt: number;
+	id: string; // unique identifier (blake3 hash of config?)
+	name?: string; // human-readable
+
+	// Custody
+	escrowWallet: PublicKey; // PDA or injected wallet
+	controllerType: ControllerType;
+	controllerId: string; // wallet pubkey | program id | mjolnir fn
+
+	// Routing
+	decider: Decider;
+	destinations: Destination[]; // static fallback if decider fails
+
+	// Execution
+	triggerMode: TriggerMode;
+	retryPolicy: RetryPolicy;
+
+	// Metadata
+	createdAt: number;
+	updatedAt: number;
 }
 
-type ControllerType = 
-  | 'wallet'      // human wallet signs
-  | 'multisig'    // M-of-N PDA
-  | 'program'     // Solana program (CPI)
-  | 'mjolnir';    // off-chain compute attestation
+type ControllerType =
+	| 'wallet' // human wallet signs
+	| 'multisig' // M-of-N PDA
+	| 'program' // Solana program (CPI)
+	| 'mjolnir'; // off-chain compute attestation
 
 type TriggerMode =
-  | { type: 'manual' }
-  | { type: 'threshold'; amountLamports: bigint }
-  | { type: 'cron'; intervalMs: number }
-  | { type: 'event'; eventType: string };
+	| { type: 'manual' }
+	| { type: 'threshold'; amountLamports: bigint }
+	| { type: 'cron'; intervalMs: number }
+	| { type: 'event'; eventType: string };
 ```
 
 #### Destination
@@ -114,16 +114,13 @@ Where tokens flow to. Can be terminal (wallet) or recursive (another pipe).
 
 ```typescript
 interface Destination {
-  address: PublicKey;
-  destinationType: DestinationType;
-  shareBps: number;              // basis points, 10000 = 100%
-  minAmount?: bigint;            // optional dust threshold
+	address: PublicKey;
+	destinationType: DestinationType;
+	shareBps: number; // basis points, 10000 = 100%
+	minAmount?: bigint; // optional dust threshold
 }
 
-type DestinationType =
-  | 'wallet'
-  | 'program'
-  | 'pipe';                      // recursive!
+type DestinationType = 'wallet' | 'program' | 'pipe'; // recursive!
 ```
 
 #### Decider
@@ -132,49 +129,49 @@ The brain. Determines routing at execution time.
 
 ```typescript
 interface Decider {
-  type: DeciderType;
-  config: DeciderConfig;
+	type: DeciderType;
+	config: DeciderConfig;
 }
 
 type DeciderType =
-  | 'static'      // use destinations as configured
-  | 'lambda'      // inline function (stub for mjolnir)
-  | 'mjolnir';    // future: full microVM execution
+	| 'static' // use destinations as configured
+	| 'lambda' // inline function (stub for mjolnir)
+	| 'mjolnir'; // future: full microVM execution
 
 interface DeciderConfig {
-  // For lambda/mjolnir
-  functionId?: string;
-  timeout?: number;
-  
-  // For static
-  destinations?: Destination[];
+	// For lambda/mjolnir
+	functionId?: string;
+	timeout?: number;
+
+	// For static
+	destinations?: Destination[];
 }
 
 // Decider function signature (lambda or mjolnir)
 type DeciderFn = (ctx: DeciderContext) => Promise<DeciderResult>;
 
 interface DeciderContext {
-  pipeId: string;
-  escrowBalance: bigint;
-  splBalances: Map<string, bigint>;  // mint → amount
-  triggerType: TriggerMode['type'];
-  timestamp: number;
-  
-  // I/O capabilities (effects)
-  fetch: typeof fetch;               // HTTP
-  readPipe: (id: string) => Promise<Pipe>;
-  // ... more as needed
+	pipeId: string;
+	escrowBalance: bigint;
+	splBalances: Map<string, bigint>; // mint → amount
+	triggerType: TriggerMode['type'];
+	timestamp: number;
+
+	// I/O capabilities (effects)
+	fetch: typeof fetch; // HTTP
+	readPipe: (id: string) => Promise<Pipe>;
+	// ... more as needed
 }
 
 interface DeciderResult {
-  distributions: Distribution[];
-  attestation?: string;              // signed proof of decision
+	distributions: Distribution[];
+	attestation?: string; // signed proof of decision
 }
 
 interface Distribution {
-  destination: PublicKey;
-  amount: bigint;
-  mint?: PublicKey;                  // SOL if undefined
+	destination: PublicKey;
+	amount: bigint;
+	mint?: PublicKey; // SOL if undefined
 }
 ```
 
@@ -184,39 +181,33 @@ Record of a pipe execution.
 
 ```typescript
 interface Execution {
-  id: string;
-  pipeId: string;
-  triggeredAt: number;
-  completedAt?: number;
-  
-  status: ExecutionStatus;
-  
-  input: {
-    balanceBefore: bigint;
-    splBalancesBefore: Map<string, bigint>;
-  };
-  
-  decision?: DeciderResult;
-  
-  output?: {
-    transactions: string[];          // tx signatures
-    distributions: Distribution[];
-  };
-  
-  error?: {
-    message: string;
-    retryCount: number;
-    nextRetryAt?: number;
-  };
+	id: string;
+	pipeId: string;
+	triggeredAt: number;
+	completedAt?: number;
+
+	status: ExecutionStatus;
+
+	input: {
+		balanceBefore: bigint;
+		splBalancesBefore: Map<string, bigint>;
+	};
+
+	decision?: DeciderResult;
+
+	output?: {
+		transactions: string[]; // tx signatures
+		distributions: Distribution[];
+	};
+
+	error?: {
+		message: string;
+		retryCount: number;
+		nextRetryAt?: number;
+	};
 }
 
-type ExecutionStatus =
-  | 'pending'
-  | 'deciding'
-  | 'executing'
-  | 'completed'
-  | 'failed'
-  | 'retrying';
+type ExecutionStatus = 'pending' | 'deciding' | 'executing' | 'completed' | 'failed' | 'retrying';
 ```
 
 ---
@@ -300,7 +291,7 @@ When a destination is another pipe:
 ```
 Pipe A                      Pipe B                      Final
 ───────                     ───────                     ─────
-                            
+
 escrow ──▶ decide ──┐       escrow ──▶ decide ──┐
                     │                           │
                     └──▶ Pipe B.escrow          └──▶ Wallet X (60%)
@@ -319,43 +310,38 @@ escrow ──▶ decide ──┐       escrow ──▶ decide ──┐
 // Using @bagsfm/bags-sdk
 
 async function claimAllToPipe(
-  pipeId: string,
-  escrowKeypair: Keypair,
-  sdk: BagsSDK
+	pipeId: string,
+	escrowKeypair: Keypair,
+	sdk: BagsSDK
 ): Promise<ClaimResult> {
-  // 1. Get all claimable positions for escrow wallet
-  const positions = await sdk.fee.getAllClaimablePositions(
-    escrowKeypair.publicKey
-  );
-  
-  if (positions.length === 0) {
-    return { claimed: 0, transactions: [] };
-  }
-  
-  const txSignatures: string[] = [];
-  
-  // 2. Claim each position
-  for (const position of positions) {
-    const claimTxns = await sdk.fee.getClaimTransaction(
-      escrowKeypair.publicKey,
-      position
-    );
-    
-    for (const tx of claimTxns) {
-      const sig = await signAndSendTransaction(
-        sdk.state.getConnection(),
-        sdk.state.getCommitment(),
-        tx,
-        escrowKeypair
-      );
-      txSignatures.push(sig);
-    }
-  }
-  
-  return {
-    claimed: positions.length,
-    transactions: txSignatures,
-  };
+	// 1. Get all claimable positions for escrow wallet
+	const positions = await sdk.fee.getAllClaimablePositions(escrowKeypair.publicKey);
+
+	if (positions.length === 0) {
+		return { claimed: 0, transactions: [] };
+	}
+
+	const txSignatures: string[] = [];
+
+	// 2. Claim each position
+	for (const position of positions) {
+		const claimTxns = await sdk.fee.getClaimTransaction(escrowKeypair.publicKey, position);
+
+		for (const tx of claimTxns) {
+			const sig = await signAndSendTransaction(
+				sdk.state.getConnection(),
+				sdk.state.getCommitment(),
+				tx,
+				escrowKeypair
+			);
+			txSignatures.push(sig);
+		}
+	}
+
+	return {
+		claimed: positions.length,
+		transactions: txSignatures
+	};
 }
 ```
 
@@ -375,59 +361,63 @@ For initial implementation, stub Mjolnir with simple lambda execution:
 ```typescript
 // Stub implementation - runs locally
 class LambdaDecider implements Decider {
-  type = 'lambda' as const;
-  
-  constructor(private fn: DeciderFn) {}
-  
-  async decide(ctx: DeciderContext): Promise<DeciderResult> {
-    // Just run the function directly
-    // In production Mjolnir: this would be sandboxed microVM execution
-    return await this.fn(ctx);
-  }
+	type = 'lambda' as const;
+
+	constructor(private fn: DeciderFn) {}
+
+	async decide(ctx: DeciderContext): Promise<DeciderResult> {
+		// Just run the function directly
+		// In production Mjolnir: this would be sandboxed microVM execution
+		return await this.fn(ctx);
+	}
 }
 
 // Example decider functions
 
 // Split 50/50
 const splitFiftyFifty: DeciderFn = async (ctx) => {
-  const half = ctx.escrowBalance / 2n;
-  return {
-    distributions: [
-      { destination: WALLET_A, amount: half },
-      { destination: WALLET_B, amount: ctx.escrowBalance - half },
-    ],
-  };
+	const half = ctx.escrowBalance / 2n;
+	return {
+		distributions: [
+			{ destination: WALLET_A, amount: half },
+			{ destination: WALLET_B, amount: ctx.escrowBalance - half }
+		]
+	};
 };
 
 // Time-based: charity on weekends, me on weekdays
 const weekendCharity: DeciderFn = async (ctx) => {
-  const day = new Date(ctx.timestamp).getDay();
-  const isWeekend = day === 0 || day === 6;
-  
-  return {
-    distributions: [{
-      destination: isWeekend ? CHARITY_WALLET : MY_WALLET,
-      amount: ctx.escrowBalance,
-    }],
-  };
+	const day = new Date(ctx.timestamp).getDay();
+	const isWeekend = day === 0 || day === 6;
+
+	return {
+		distributions: [
+			{
+				destination: isWeekend ? CHARITY_WALLET : MY_WALLET,
+				amount: ctx.escrowBalance
+			}
+		]
+	};
 };
 
 // Dynamic: check price feed, route based on conditions
 const priceBasedRoute: DeciderFn = async (ctx) => {
-  const res = await ctx.fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd');
-  const { solana: { usd: price } } = await res.json();
-  
-  // If SOL > $200, take profits; otherwise accumulate
-  if (price > 200) {
-    return {
-      distributions: [
-        { destination: PROFIT_WALLET, amount: ctx.escrowBalance },
-      ],
-    };
-  }
-  
-  // Hold - don't distribute
-  return { distributions: [] };
+	const res = await ctx.fetch(
+		'https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd'
+	);
+	const {
+		solana: { usd: price }
+	} = await res.json();
+
+	// If SOL > $200, take profits; otherwise accumulate
+	if (price > 200) {
+		return {
+			distributions: [{ destination: PROFIT_WALLET, amount: ctx.escrowBalance }]
+		};
+	}
+
+	// Hold - don't distribute
+	return { distributions: [] };
 };
 ```
 
@@ -437,33 +427,33 @@ const priceBasedRoute: DeciderFn = async (ctx) => {
 
 ```typescript
 interface RetryPolicy {
-  maxRetries: number;           // default: 5
-  initialDelayMs: number;       // default: 1000
-  maxDelayMs: number;           // default: 60000
-  backoffMultiplier: number;    // default: 2
+	maxRetries: number; // default: 5
+	initialDelayMs: number; // default: 1000
+	maxDelayMs: number; // default: 60000
+	backoffMultiplier: number; // default: 2
 }
 
 function calculateNextRetry(policy: RetryPolicy, attempt: number): number {
-  const delay = Math.min(
-    policy.initialDelayMs * Math.pow(policy.backoffMultiplier, attempt),
-    policy.maxDelayMs
-  );
-  // Add jitter: ±10%
-  const jitter = delay * 0.1 * (Math.random() * 2 - 1);
-  return delay + jitter;
+	const delay = Math.min(
+		policy.initialDelayMs * Math.pow(policy.backoffMultiplier, attempt),
+		policy.maxDelayMs
+	);
+	// Add jitter: ±10%
+	const jitter = delay * 0.1 * (Math.random() * 2 - 1);
+	return delay + jitter;
 }
 
 // User manual claim (escape hatch)
 async function manualClaim(pipeId: string, userWallet: Keypair): Promise<void> {
-  const pipe = await getPipe(pipeId);
-  
-  // Verify user is authorized (controller or fallback)
-  if (!isAuthorized(userWallet.publicKey, pipe)) {
-    throw new Error('Unauthorized');
-  }
-  
-  // Transfer entire balance to user
-  await transfer(pipe.escrowWallet, userWallet.publicKey, 'all');
+	const pipe = await getPipe(pipeId);
+
+	// Verify user is authorized (controller or fallback)
+	if (!isAuthorized(userWallet.publicKey, pipe)) {
+		throw new Error('Unauthorized');
+	}
+
+	// Transfer entire balance to user
+	await transfer(pipe.escrowWallet, userWallet.publicKey, 'all');
 }
 ```
 
@@ -477,20 +467,20 @@ Using **Blake3** for all content-addressed / verification needs:
 import { blake3 } from '@noble/hashes/blake3';
 
 function hashPipeConfig(pipe: Pipe): string {
-  const canonical = JSON.stringify({
-    escrowWallet: pipe.escrowWallet.toBase58(),
-    controllerType: pipe.controllerType,
-    controllerId: pipe.controllerId,
-    decider: pipe.decider,
-    destinations: pipe.destinations,
-  });
-  
-  return Buffer.from(blake3(canonical)).toString('hex');
+	const canonical = JSON.stringify({
+		escrowWallet: pipe.escrowWallet.toBase58(),
+		controllerType: pipe.controllerType,
+		controllerId: pipe.controllerId,
+		decider: pipe.decider,
+		destinations: pipe.destinations
+	});
+
+	return Buffer.from(blake3(canonical)).toString('hex');
 }
 
 function hashAttestation(decision: DeciderResult, timestamp: number): string {
-  const data = JSON.stringify({ decision, timestamp });
-  return Buffer.from(blake3(data)).toString('hex');
+	const data = JSON.stringify({ decision, timestamp });
+	return Buffer.from(blake3(data)).toString('hex');
 }
 ```
 
@@ -502,22 +492,22 @@ function hashAttestation(decision: DeciderResult, timestamp: number): string {
 
 ```typescript
 interface PipeService {
-  // CRUD
-  create(config: CreatePipeInput): Promise<Pipe>;
-  get(id: string): Promise<Pipe | null>;
-  update(id: string, updates: UpdatePipeInput): Promise<Pipe>;
-  delete(id: string): Promise<void>;
-  
-  // Query
-  list(filter?: PipeFilter): Promise<Pipe[]>;
-  listByController(controllerId: string): Promise<Pipe[]>;
-  
-  // Execution
-  trigger(id: string): Promise<Execution>;
-  getExecutions(pipeId: string): Promise<Execution[]>;
-  
-  // Escape hatch
-  manualClaim(pipeId: string, signer: Keypair): Promise<string>;
+	// CRUD
+	create(config: CreatePipeInput): Promise<Pipe>;
+	get(id: string): Promise<Pipe | null>;
+	update(id: string, updates: UpdatePipeInput): Promise<Pipe>;
+	delete(id: string): Promise<void>;
+
+	// Query
+	list(filter?: PipeFilter): Promise<Pipe[]>;
+	listByController(controllerId: string): Promise<Pipe[]>;
+
+	// Execution
+	trigger(id: string): Promise<Execution>;
+	getExecutions(pipeId: string): Promise<Execution[]>;
+
+	// Escape hatch
+	manualClaim(pipeId: string, signer: Keypair): Promise<string>;
 }
 ```
 
@@ -525,13 +515,13 @@ interface PipeService {
 
 ```typescript
 interface BagsService {
-  // Query
-  getClaimablePositions(wallet: PublicKey): Promise<ClaimablePosition[]>;
-  getTokenCreators(mint: PublicKey): Promise<Creator[]>;
-  
-  // Actions
-  claimAll(wallet: Keypair): Promise<ClaimResult>;
-  claimForToken(wallet: Keypair, mint: PublicKey): Promise<ClaimResult>;
+	// Query
+	getClaimablePositions(wallet: PublicKey): Promise<ClaimablePosition[]>;
+	getTokenCreators(mint: PublicKey): Promise<Creator[]>;
+
+	// Actions
+	claimAll(wallet: Keypair): Promise<ClaimResult>;
+	claimForToken(wallet: Keypair, mint: PublicKey): Promise<ClaimResult>;
 }
 ```
 
@@ -595,6 +585,7 @@ bagpipe/
 ## Implementation Phases
 
 ### Phase 1: Core Pipe Mechanics
+
 - [ ] Pipe entity & types
 - [ ] Static decider (fixed splits)
 - [ ] In-memory storage
@@ -602,29 +593,34 @@ bagpipe/
 - [ ] Manual trigger only
 
 ### Phase 2: Bags Integration
+
 - [ ] Bags SDK integration
 - [ ] Claim aggregation
 - [ ] Escrow wallet management
 - [ ] Claim → route flow
 
 ### Phase 3: Lambda Deciders
+
 - [ ] Lambda decider stub
 - [ ] Decider context with fetch
 - [ ] Example decider functions
 - [ ] Attestation generation
 
 ### Phase 4: Scheduling & Retry
+
 - [ ] Threshold triggers
 - [ ] Cron triggers
 - [ ] Exponential backoff
 - [ ] Manual claim escape hatch
 
 ### Phase 5: Recursion
+
 - [ ] Pipe-to-pipe destinations
 - [ ] Depth limiting
 - [ ] Cycle detection
 
 ### Phase 6: Production Hardening
+
 - [ ] Postgres storage
 - [ ] Proper logging/metrics
 - [ ] Mjolnir integration (when ready)

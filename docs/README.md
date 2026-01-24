@@ -12,6 +12,7 @@ INPUT ──▶ [ ESCROW ] ──▶ [ DECIDER ] ──▶ OUTPUT
 Bagpipe routes token streams through programmable pipes. Primary use case: redirecting [Bags.fm](https://bags.fm) creator royalties to arbitrary destinations with custom logic.
 
 **Key features:**
+
 - **Escrow custody** - Bagpipe holds funds in controlled wallets
 - **Turing-complete routing** - Decider logic can do anything (fetch APIs, time-based rules, price feeds)
 - **Recursive pipes** - Output of one pipe → input of another
@@ -32,12 +33,12 @@ import { Bagpipe, StaticDecider } from 'bagpipe';
 
 // Create a pipe that splits 60/40
 const pipe = await bagpipe.createPipe({
-  name: 'my-royalty-split',
-  decider: new StaticDecider([
-    { address: ARTIST_WALLET, shareBps: 6000 },
-    { address: MANAGER_WALLET, shareBps: 4000 },
-  ]),
-  triggerMode: { type: 'threshold', amountLamports: 1_000_000_000n }, // 1 SOL
+	name: 'my-royalty-split',
+	decider: new StaticDecider([
+		{ address: ARTIST_WALLET, shareBps: 6000 },
+		{ address: MANAGER_WALLET, shareBps: 4000 }
+	]),
+	triggerMode: { type: 'threshold', amountLamports: 1_000_000_000n } // 1 SOL
 });
 
 // Trigger manually
