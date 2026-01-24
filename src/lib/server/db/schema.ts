@@ -133,3 +133,53 @@ export type NewExecution = typeof executions.$inferInsert;
 
 export type Claim = typeof claims.$inferSelect;
 export type NewClaim = typeof claims.$inferInsert;
+
+// ─────────────────────────────────────────────────────────────
+// WALLET AUTH - Authentication tables for Solana wallet auth
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Wallet users table
+ * Stores user accounts associated with wallet addresses
+ */
+export const walletUsers = pgTable('wallet_users', {
+	id: text('id').primaryKey(),
+	walletAddress: text('wallet_address').notNull().unique(),
+	createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+	updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
+});
+
+/**
+ * Wallet sessions table
+ * Stores active authentication sessions for wallet users
+ */
+export const walletSessions = pgTable('wallet_sessions', {
+	id: text('id').primaryKey(),
+	secretHash: text('secret_hash').notNull(),
+	userId: text('user_id')
+		.references(() => walletUsers.id)
+		.notNull(),
+	walletAddress: text('wallet_address').notNull(),
+	expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+	createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+});
+
+/**
+ * Auth nonces table
+ * Stores one-time nonces for SIWS authentication
+ */
+export const authNonces = pgTable('auth_nonces', {
+	nonce: text('nonce').primaryKey(),
+	walletAddress: text('wallet_address').notNull(),
+	expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+	createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+});
+
+export type WalletUser = typeof walletUsers.$inferSelect;
+export type NewWalletUser = typeof walletUsers.$inferInsert;
+
+export type WalletSession = typeof walletSessions.$inferSelect;
+export type NewWalletSession = typeof walletSessions.$inferInsert;
+
+export type AuthNonce = typeof authNonces.$inferSelect;
+export type NewAuthNonce = typeof authNonces.$inferInsert;
