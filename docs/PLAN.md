@@ -33,11 +33,11 @@ Example functions     Escape hatch
 
 ### Deliverables
 
-- [ ] Working TypeScript project with deps
-- [ ] Config loading & validation
-- [ ] SQLite storage (dev) with schema
-- [ ] Solana service (balance queries, transfers)
-- [ ] Wallet service stub (env var keys)
+- [x] Working TypeScript project with deps
+- [x] Config loading & validation
+- [x] Postgres storage with schema (upgraded from SQLite)
+- [x] Solana service (balance queries, transfers)
+- [x] Wallet service stub (env var keys)
 
 ### Tasks
 

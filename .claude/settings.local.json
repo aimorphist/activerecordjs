@@ -7,7 +7,10 @@
       "Bash(git add:*)",
       "Bash(bash scripts/spec_metadata.sh:*)",
       "Bash(bun repl:*)",
-      "WebFetch(domain:orm.drizzle.team)"
+      "WebFetch(domain:orm.drizzle.team)",
+      "Bash(for i in 1 2 3)",
+      "Bash(do echo \"Run $i:\")",
+      "Bash(done)"
     ]
   }
 }

@@ -4,7 +4,10 @@ export default defineConfig({
 	test: {
 		globals: true,
 		environment: 'node',
-		include: ['src/lib/activerecordjs/**/*.integration.{test,spec}.ts'],
+		include: [
+			'src/lib/activerecordjs/**/*.integration.{test,spec}.ts',
+			'src/lib/server/**/*.integration.{test,spec}.ts'
+		],
 		testTimeout: 30000,
 		hookTimeout: 30000,
 		// Global setup creates tables once before all tests

@@ -2,6 +2,7 @@ import { pipes, type Pipe, type NewPipe } from '$lib/server/db/schema';
 import { createModelHelpers } from './base';
 import { generateId } from '$lib/server/utils/hash';
 import { PipeNotFoundError } from '$lib/server/errors';
+import { validateDestinations } from '$lib/server/utils/validation';
 import type { Destination, TriggerMode, DeciderConfig, RetryPolicy } from '$lib/server/types';
 
 const helpers = createModelHelpers<typeof pipes, Pipe, NewPipe>(pipes);
@@ -41,6 +42,11 @@ export const PipeModel = {
 	},
 
 	async create(input: CreatePipeInput): Promise<Pipe> {
+		// Validate destinations if provided
+		if (input.destinations && input.destinations.length > 0) {
+			validateDestinations(input.destinations);
+		}
+
 		const id = generateId('pipe', {
 			escrowWallet: input.escrowWallet,
 			controllerType: input.controllerType,

@@ -47,3 +47,28 @@ export class TransactionFailedError extends BagpipeError {
 		this.signature = signature;
 	}
 }
+
+export class InsufficientBalanceError extends BagpipeError {
+	constructor(required: bigint, available: bigint) {
+		super(
+			`Insufficient balance: need ${required}, have ${available}`,
+			'INSUFFICIENT_BALANCE',
+			false
+		);
+		this.name = 'InsufficientBalanceError';
+	}
+}
+
+export class ExecutionError extends BagpipeError {
+	constructor(executionId: string, message: string) {
+		super(`Execution ${executionId} failed: ${message}`, 'EXECUTION_ERROR', false);
+		this.name = 'ExecutionError';
+	}
+}
+
+export class PipeDisabledError extends BagpipeError {
+	constructor(pipeId: string) {
+		super(`Pipe ${pipeId} is disabled`, 'PIPE_DISABLED', false);
+		this.name = 'PipeDisabledError';
+	}
+}
