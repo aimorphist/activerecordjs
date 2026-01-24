@@ -1,93 +1,96 @@
 import { drizzle, type PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { sql } from 'drizzle-orm';
-import { setGlobalConnection } from './connection';
+import { setGlobalConnection, runWithConnection } from './connection';
 
 const connectionString =
 	process.env.TEST_DATABASE_URL ||
 	process.env.DATABASE_URL ||
 	'postgresql://localhost:5432/bagpipe_test';
 
-// Per-test-file connection (max: 1 ensures all queries use same connection for transactions)
-let client: ReturnType<typeof postgres>;
-let db: PostgresJsDatabase;
+// Shared connection pool (each Vitest worker gets its own instance)
+let pool: ReturnType<typeof postgres> | null = null;
+let poolDb: PostgresJsDatabase | null = null;
+
+// Per-test reserved connection (for transaction isolation)
+let reservedConnection: ReturnType<typeof postgres> | null = null;
+let testDb: PostgresJsDatabase | null = null;
 
 /**
- * Sets up the test database for a test file.
- * Creates a dedicated single-connection pool for transaction isolation.
+ * Sets up the test database connection for a test file.
+ * Tables are created by globalSetup.integration.ts before any tests run.
  * Call this in beforeAll().
  */
 export async function setupTestDb() {
-	// max: 1 ensures all queries go through the same connection,
-	// allowing BEGIN/ROLLBACK to work correctly
-	client = postgres(connectionString, { max: 1 });
-	db = drizzle(client);
-	setGlobalConnection(db);
+	// Create shared pool if not exists (each worker gets its own)
+	if (!pool) {
+		pool = postgres(connectionString, {
+			max: 10, // Pool size for parallel tests
+			idle_timeout: 30
+		});
+		poolDb = drizzle(pool);
+	}
 
-	await createTables();
-
-	return db;
+	// Set global connection
+	setGlobalConnection(poolDb!);
+	return poolDb!;
 }
 
 /**
  * Begins a test transaction. Call this in beforeEach().
- * All database operations until rollbackTestTransaction() will be within this transaction.
+ * Reserves a dedicated connection from the pool and starts a transaction.
  */
 export async function beginTestTransaction() {
-	await db.execute(sql`BEGIN`);
+	// Create a single-connection "pool" for this test to ensure transaction isolation
+	// This reserves a connection that won't be shared with other tests
+	reservedConnection = postgres(connectionString, { max: 1 });
+	testDb = drizzle(reservedConnection);
+
+	// Use runWithConnection so all ORM operations in this async context use testDb
+	// Note: We need to set it globally too for the current synchronous context
+	setGlobalConnection(testDb);
+
+	await testDb.execute(sql`BEGIN`);
 }
 
 /**
  * Rolls back the test transaction. Call this in afterEach().
- * Undoes all database changes made during the test.
+ * Undoes all database changes and releases the connection.
  */
 export async function rollbackTestTransaction() {
-	await db.execute(sql`ROLLBACK`);
-}
-
-/**
- * @deprecated Use beginTestTransaction/rollbackTestTransaction instead for faster test isolation.
- * Legacy cleanup using TRUNCATE - slower but still available for backwards compatibility.
- */
-export async function cleanupTestDb() {
-	try {
-		await db.execute(sql`TRUNCATE TABLE posts, users RESTART IDENTITY CASCADE`);
-	} catch {
-		// Tables might not exist if another test suite dropped them, recreate
-		await createTables();
+	if (testDb) {
+		await testDb.execute(sql`ROLLBACK`);
+	}
+	if (reservedConnection) {
+		await reservedConnection.end();
+		reservedConnection = null;
+		testDb = null;
+	}
+	// Restore pool connection as global
+	if (poolDb) {
+		setGlobalConnection(poolDb);
 	}
 }
 
-async function createTables() {
-	await db.execute(sql`DROP TABLE IF EXISTS posts CASCADE`);
-	await db.execute(sql`DROP TABLE IF EXISTS users CASCADE`);
-
-	await db.execute(sql`
-    CREATE TABLE users (
-      id SERIAL PRIMARY KEY,
-      name TEXT,
-      email TEXT NOT NULL,
-      created_at TIMESTAMP DEFAULT NOW(),
-      updated_at TIMESTAMP DEFAULT NOW()
-    )
-  `);
-
-	await db.execute(sql`
-    CREATE TABLE posts (
-      id SERIAL PRIMARY KEY,
-      title TEXT NOT NULL,
-      body TEXT,
-      user_id INTEGER REFERENCES users(id),
-      created_at TIMESTAMP DEFAULT NOW(),
-      updated_at TIMESTAMP DEFAULT NOW()
-    )
-  `);
+/**
+ * @deprecated Use beginTestTransaction/rollbackTestTransaction instead.
+ */
+export async function cleanupTestDb() {
+	const db = testDb || poolDb;
+	if (!db) return;
+	await db.execute(sql`TRUNCATE TABLE posts, users RESTART IDENTITY CASCADE`);
 }
 
 export async function teardownTestDb() {
-	await db.execute(sql`DROP TABLE IF EXISTS posts CASCADE`);
-	await db.execute(sql`DROP TABLE IF EXISTS users CASCADE`);
-	await client.end();
+	// Clean up this file's test connection if any
+	if (reservedConnection) {
+		await reservedConnection.end();
+		reservedConnection = null;
+		testDb = null;
+	}
+	// Note: Don't close the shared pool - other test files may still use it
+	// Vitest will handle process cleanup
 }
 
-export { db };
+/** Export for backward compatibility */
+export { runWithConnection };

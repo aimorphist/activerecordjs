@@ -36,7 +36,7 @@ describe('CRUD Integration Tests', () => {
 				email: 'duke@example.com'
 			});
 
-			expect(user.id).toBe(1);
+			expect(user.id).toBeGreaterThan(0);
 			expect(user.name).toBe('Duke Jones');
 			expect(user.email).toBe('duke@example.com');
 			expect(user.createdAt).toBeInstanceOf(Date);
