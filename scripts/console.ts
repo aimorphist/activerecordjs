@@ -4,21 +4,10 @@
  * Uses Bun's native REPL via child process.
  */
 
-import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
-import { spawn } from 'child_process';
+import { db, cleanup } from './lib/bootstrap';
 import { createInterface } from 'readline';
 
-// Verify DATABASE_URL is set
-if (!process.env.DATABASE_URL) {
-	console.error('Error: DATABASE_URL is not set in .env');
-	process.exit(1);
-}
-
-// Create database connection
 import * as schema from '../src/lib/server/db/schema';
-const client = postgres(process.env.DATABASE_URL);
-const db = drizzle(client, { schema });
 
 const { pipes, executions, claims } = schema;
 
@@ -169,6 +158,11 @@ const ExecutionModel = {
 import { SolanaService, EnvWalletService } from '../src/lib/server/services';
 import { loadConfig } from '../src/lib/server/config';
 
+// ActiveRecordJS Model for testing
+import { Model, setGlobalConnection, ValidationError, z } from '../src/lib/activerecordjs';
+import { usersTable, postsTable } from '../src/lib/activerecordjs/fixtures/schema';
+setGlobalConnection(db as any);
+
 // Make available globally
 const context = {
 	db,
@@ -182,7 +176,13 @@ const context = {
 	loadConfig,
 	generateId,
 	hashHex,
-	eq
+	eq,
+	// ActiveRecordJS
+	Model,
+	ValidationError,
+	z,
+	usersTable,
+	postsTable
 };
 
 Object.assign(globalThis, context);
@@ -193,9 +193,12 @@ console.log(`
 ╠═══════════════════════════════════════════════════════════════╣
 ║  db, PipeModel, ExecutionModel, pipes, executions, claims     ║
 ║  SolanaService, EnvWalletService, loadConfig, generateId, eq  ║
+║  Model, ValidationError, z, usersTable, postsTable            ║
 ╚═══════════════════════════════════════════════════════════════╝
 
 Try: await PipeModel.all()
+     const User = Model(usersTable)
+     User.build({ email: 'test@example.com' })
 `);
 
 // Simple REPL using readline
@@ -205,16 +208,37 @@ const rl = createInterface({
 	terminal: true
 });
 
-async function evalCode(code: string) {
+// Shared REPL context - variables persist across commands
+const replContext: Record<string, any> = { ...context };
+
+// Evaluate code within the replContext scope
+async function evalCode(code: string): Promise<any> {
+	// Transform variable declarations to context assignments
+	// const/let/var name = expr  ->  replContext.name = expr
+	const transformed = code.replace(
+		/^(const|let|var)\s+(\w+)\s*=/,
+		(_, __, name) => `replContext.${name} =`
+	);
+
+	// Create evaluator function with replContext in scope
+	const asyncEval = (c: string) => {
+		// Use indirect eval to get global scope, but with our context accessible
+		const evalInContext = new Function(
+			'replContext',
+			`with(replContext) { return eval(${JSON.stringify(c)}); }`
+		);
+		return evalInContext(replContext);
+	};
+
 	try {
-		// Handle await expressions
-		const result = await eval(`(async () => { return (${code}) })()`);
+		// Try as async expression first
+		const result = await asyncEval(`(async () => (${transformed}))()`);
 		return result;
 	} catch {
-		// Try as statements
+		// Try as async statements
 		try {
-			await eval(`(async () => { ${code} })()`);
-			return undefined;
+			const result = await asyncEval(`(async () => { ${transformed} })()`);
+			return result;
 		} catch (e: any) {
 			throw e;
 		}
@@ -232,7 +256,7 @@ function prompt() {
 
 		if (code === '.exit' || code === 'exit') {
 			console.log('Goodbye!');
-			await client.end();
+			await cleanup();
 			process.exit(0);
 		}
 
