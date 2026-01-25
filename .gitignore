@@ -25,4 +25,6 @@ vite.config.ts.timestamp-*
 
 *storybook.log
 storybook-static
-thoughts/
+
+/thoughts
+/.claude/settings.local.json
