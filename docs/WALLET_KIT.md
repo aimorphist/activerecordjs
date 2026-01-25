@@ -14,12 +14,15 @@ Production-ready Solana wallet connection library with Sign-In With Solana (SIWS
 ## Supported Wallets
 
 ### Explicit Adapters
+
 - Phantom
 - Solflare
 - Backpack
 
 ### Wallet Standard
+
 Auto-detects any Wallet Standard compliant wallet including:
+
 - MetaMask
 - Glow
 - Ultimate
@@ -30,7 +33,7 @@ Auto-detects any Wallet Standard compliant wallet including:
 ```bash
 npm install @startdotfun/solana-wallet-kit
 # or
-pnpm add @startdotfun/solana-wallet-kit
+bun add @startdotfun/solana-wallet-kit
 # or
 yarn add @startdotfun/solana-wallet-kit
 ```
@@ -61,32 +64,32 @@ export const auth = createAuth({
 
 ```svelte
 <script lang="ts">
-  import { auth } from '$lib/auth.svelte';
-  import { connectWallet, authenticate, logout } from '@startdotfun/solana-wallet-kit/svelte';
+	import { auth } from '$lib/auth.svelte';
+	import { connectWallet, authenticate, logout } from '@startdotfun/solana-wallet-kit/svelte';
 
-  // Reactive state
-  const { status, walletPubkey, userId, isReady, walletConnected } = auth;
+	// Reactive state
+	const { status, walletPubkey, userId, isReady, walletConnected } = auth;
 
-  async function handleConnect() {
-    await connectWallet('phantom', auth.walletBridge);
-    await authenticate(auth.machine);
-  }
+	async function handleConnect() {
+		await connectWallet('phantom', auth.walletBridge);
+		await authenticate(auth.machine);
+	}
 
-  async function handleLogout() {
-    await logout(auth.machine, auth.walletBridge, true);
-  }
+	async function handleLogout() {
+		await logout(auth.machine, auth.walletBridge, true);
+	}
 </script>
 
 {#if isReady}
-  <div>
-    <p>Connected: {walletPubkey}</p>
-    <p>User ID: {userId}</p>
-    <button onclick={handleLogout}>Disconnect</button>
-  </div>
+	<div>
+		<p>Connected: {walletPubkey}</p>
+		<p>User ID: {userId}</p>
+		<button onclick={handleLogout}>Disconnect</button>
+	</div>
 {:else if walletConnected}
-  <button onclick={() => authenticate(auth.machine)}>Sign In</button>
+	<button onclick={() => authenticate(auth.machine)}>Sign In</button>
 {:else}
-  <button onclick={handleConnect}>Connect Wallet</button>
+	<button onclick={handleConnect}>Connect Wallet</button>
 {/if}
 ```
 
@@ -272,5 +275,6 @@ Contributions are welcome! Please open an issue or PR.
 ## Support
 
 For issues and questions:
+
 - GitHub Issues: https://github.com/your-org/solana-wallet-kit/issues
 - Documentation: https://docs.your-app.com/wallet-kit

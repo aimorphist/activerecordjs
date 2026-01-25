@@ -43,7 +43,7 @@ Example functions     Escape hatch
 
 | Task                         | Effort | Description                              |
 | ---------------------------- | ------ | ---------------------------------------- |
-| **M1.1** Project init        | S      | `pnpm init`, tsconfig, eslint, structure |
+| **M1.1** Project init        | S      | `bun init`, tsconfig, eslint, structure |
 | **M1.2** Dependencies        | S      | Install core deps per ARCHITECTURE.md    |
 | **M1.3** Config schema       | S      | Zod schema, .env.example, loader         |
 | **M1.4** Logger setup        | S      | Pino wrapper with structured events      |
@@ -59,8 +59,8 @@ Example functions     Escape hatch
 
 ### Acceptance Criteria
 
-- [x] `pnpm build` succeeds
-- [x] `pnpm test` runs unit tests
+- [x] `bun build` succeeds
+- [x] `bun test` runs unit tests
 - [x] Config loads from .env
 - [x] Can query SOL balance from devnet
 - [x] SQLite DB creates on startup
@@ -345,7 +345,7 @@ M3: Bags      M4: Lambda           M6: Recursion
 
 ```bash
 # Start with M1.1
-pnpm init
+bun init
 # ... follow M1 tasks sequentially
 
 # After M1 complete, start M2

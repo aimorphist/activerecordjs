@@ -30,7 +30,7 @@
 | --------------- | ------------------ | ----------------------------------------------- |
 | Runtime         | **Node.js 20+**    | Bags SDK is TypeScript; async I/O for RPC calls |
 | Language        | **TypeScript 5.x** | Type safety, Solana ecosystem standard          |
-| Package Manager | **pnpm**           | Fast, disk-efficient, good monorepo support     |
+| Package Manager | **bun**            | Fast, disk-efficient, good monorepo support     |
 
 ### Core Dependencies
 

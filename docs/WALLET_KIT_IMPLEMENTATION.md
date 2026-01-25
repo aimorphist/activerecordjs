@@ -3,6 +3,7 @@
 ## Overview
 
 Successfully extracted the wallet connection system from `apps/frontpage` into `packages/solana-wallet-kit` as a reusable library with:
+
 - Framework-agnostic core (pure FSM + types)
 - Svelte 5 integration layer
 - Server-side SIWS authentication
@@ -23,6 +24,7 @@ src/lib/wallet/core/
 ```
 
 **Changes from source:**
+
 - Added missing `SystemTimerExpired` event type
 - Made `domain` and `uri` injectable via `CommandDeps` in commands.ts
 
@@ -40,6 +42,7 @@ src/lib/wallet/adapters/
 ```
 
 **Changes from source:**
+
 - Replaced `$app/environment` imports with `typeof window !== 'undefined'`
 - Made API paths configurable in session-manager.ts
 - Removed unused `Connection` parameter from wallet-adapters.ts
@@ -55,6 +58,7 @@ src/lib/wallet/svelte/
 ```
 
 **Changes from source:**
+
 - Converted singleton pattern to factory function in auth.svelte.ts
 - Made helpers accept wallet bridge and machine instances as parameters
 - Made domain/uri configurable via AuthConfig
@@ -71,6 +75,7 @@ src/lib/wallet/server/
 ```
 
 **Changes from source:**
+
 - Replaced `$env/dynamic/private` with `process.env`
 - Created interface-based stores (SessionStore, NonceStore) for database flexibility
 
@@ -82,6 +87,7 @@ src/lib/server/db/
 ```
 
 **Tables:**
+
 - `walletUsers` - User accounts with wallet addresses
 - `walletSessions` - Active sessions with hashed secrets
 - `authNonces` - One-time nonces for authentication
@@ -120,15 +126,15 @@ src/lib/wallet/
 
 ```json
 {
-  "dependencies": {
-    "@solana/wallet-adapter-base": "^0.9.23",
-    "@solana/wallet-adapter-phantom": "^0.9.24",
-    "@solana/wallet-adapter-solflare": "^0.6.28",
-    "@solana/wallet-adapter-backpack": "^0.1.16",
-    "@wallet-standard/app": "^1.1.0",
-    "tweetnacl": "^1.0.3",
-    "bs58": "^5.0.0"
-  }
+	"dependencies": {
+		"@solana/wallet-adapter-base": "^0.9.23",
+		"@solana/wallet-adapter-phantom": "^0.9.24",
+		"@solana/wallet-adapter-solflare": "^0.6.28",
+		"@solana/wallet-adapter-backpack": "^0.1.16",
+		"@wallet-standard/app": "^1.1.0",
+		"tweetnacl": "^1.0.3",
+		"bs58": "^5.0.0"
+	}
 }
 ```
 
@@ -170,7 +176,7 @@ await authenticate(auth.machine);
 ## Next Steps
 
 1. **Copy Test Files**: Copy test files from frontpage and update imports (see TESTS.md)
-2. **Build Package**: Run `pnpm build` to compile TypeScript
+2. **Build Package**: Run `bun build` to compile TypeScript
 3. **Install in Projects**: Install the package in consuming applications
 4. **Implement API Endpoints**: Adapt example endpoints to your framework
 5. **Set Up Database**: Apply schema migrations
@@ -201,7 +207,7 @@ await authenticate(auth.machine);
 - [x] Comprehensive README
 - [x] Testing guide
 - [ ] Copy and adapt test files from frontpage
-- [ ] Run `pnpm build` to compile
+- [ ] Run `bun build` to compile
 - [ ] Manual testing with real wallet
 
 ## Notes

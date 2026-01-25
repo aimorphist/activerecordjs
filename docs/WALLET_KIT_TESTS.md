@@ -51,7 +51,7 @@ The following test files should be copied from the frontpage app and adapted:
 ### Install Test Dependencies
 
 ```bash
-pnpm add -D vitest @vitest/ui @testing-library/svelte @testing-library/jest-dom
+bun add -D vitest @vitest/ui @testing-library/svelte @testing-library/jest-dom
 ```
 
 ### Vitest Configuration
@@ -90,16 +90,16 @@ Add to `package.json`:
 
 ```bash
 # Run all tests
-pnpm test
+bun test
 
 # Run with UI
-pnpm test:ui
+bun test:ui
 
 # Run specific test file
-pnpm test reducer.test.ts
+bun test reducer.test.ts
 
 # Run with coverage
-pnpm test:coverage
+bun test:coverage
 ```
 
 ## Test Helpers
