@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ActiveRecordJSError, RecordNotFoundError } from './errors';
+import { ActiveRecordJSError, RecordNotFoundError, ValidationError } from './errors';
 
 describe('ActiveRecordJSError', () => {
 	it('is an instance of Error', () => {
@@ -29,5 +29,49 @@ describe('RecordNotFoundError', () => {
 	it('handles non-numeric ids', () => {
 		const error = new RecordNotFoundError('Post', 'abc-123');
 		expect(error.message).toBe('Post with id abc-123 not found');
+	});
+});
+
+describe('ValidationError', () => {
+	it('creates error with field errors', () => {
+		const error = new ValidationError({
+			email: ['is invalid', 'is already taken'],
+			name: ['is required']
+		});
+
+		expect(error.name).toBe('ValidationError');
+		expect(error.errors.email).toEqual(['is invalid', 'is already taken']);
+		expect(error.errors.name).toEqual(['is required']);
+	});
+
+	it('generates descriptive message', () => {
+		const error = new ValidationError({
+			email: ['is invalid'],
+			name: ['is required']
+		});
+
+		expect(error.message).toBe('Validation failed: 2 error(s) on 2 field(s)');
+	});
+
+	it('creates error for single field via forField()', () => {
+		const error = ValidationError.forField('email', 'is invalid');
+
+		expect(error.errors).toEqual({ email: ['is invalid'] });
+	});
+
+	it('generates fullMessages array', () => {
+		const error = new ValidationError({
+			email: ['is invalid'],
+			name: ['is required', 'is too short']
+		});
+
+		expect(error.fullMessages).toEqual(['email is invalid', 'name is required', 'name is too short']);
+	});
+
+	it('is instanceof ActiveRecordJSError', () => {
+		const error = new ValidationError({ email: ['is invalid'] });
+
+		expect(error).toBeInstanceOf(ActiveRecordJSError);
+		expect(error).toBeInstanceOf(ValidationError);
 	});
 });

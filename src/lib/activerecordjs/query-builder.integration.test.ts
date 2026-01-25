@@ -6,14 +6,14 @@ import {
 	rollbackTestTransaction
 } from './setup.integration';
 import { Model } from './model';
-import { users } from './fixtures/schema';
+import { usersTable } from './fixtures/schema';
 
 describe('QueryBuilder Integration Tests', () => {
 	let User: ReturnType<typeof Model<typeof users>>;
 
 	beforeAll(async () => {
 		await setupTestDb();
-		User = Model(users);
+		User = Model(usersTable);
 	});
 
 	afterAll(async () => {

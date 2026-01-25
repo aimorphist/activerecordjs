@@ -7,14 +7,14 @@ import {
 } from './setup.integration';
 import { Model } from './model';
 import { RecordNotFoundError } from './errors';
-import { users } from './fixtures/schema';
+import { usersTable } from './fixtures/schema';
 
 describe('CRUD Integration Tests', () => {
 	let User: ReturnType<typeof Model<typeof users>>;
 
 	beforeAll(async () => {
 		await setupTestDb();
-		User = Model(users);
+		User = Model(usersTable);
 	});
 
 	afterAll(async () => {
@@ -244,6 +244,72 @@ describe('CRUD Integration Tests', () => {
 			// Check that result is the same proxy instance
 			expect(result.id).toBe(user.id);
 			expect(result.isPersisted).toBe(user.isPersisted);
+		});
+	});
+
+	describe('Reload', () => {
+		it('reloads record from database, discarding unsaved changes', async () => {
+			const user = await User.create({ name: 'Original', email: 'test@example.com' });
+
+			// Make local changes without saving
+			user.name = 'Unsaved Change';
+			expect(user.name).toBe('Unsaved Change');
+
+			// Reload should discard changes
+			await user.reload();
+
+			expect(user.name).toBe('Original');
+		});
+
+		it('picks up changes made by other processes', async () => {
+			const user = await User.create({ name: 'Original', email: 'test@example.com' });
+
+			// Simulate another process updating the record
+			await User.update(user.id as number, { name: 'Updated Externally' });
+
+			// Our instance still has old value
+			expect(user.name).toBe('Original');
+
+			// Reload picks up external change
+			await user.reload();
+			expect(user.name).toBe('Updated Externally');
+		});
+
+		it('returns the instance for chaining', async () => {
+			const user = await User.create({ name: 'Test', email: 'test@example.com' });
+
+			const result = await user.reload();
+
+			expect(result).toBe(user);
+		});
+
+		it('clears validation errors on reload', async () => {
+			const user = await User.create({ name: 'Test', email: 'test@example.com' });
+
+			// Manually set some errors
+			(user as any)._errors = { name: ['some error'] };
+			expect(Object.keys(user.errors).length).toBeGreaterThan(0);
+
+			await user.reload();
+
+			expect(user.errors).toEqual({});
+		});
+
+		it('throws error when called on new record', async () => {
+			const user = User.build({ name: 'New', email: 'new@example.com' });
+
+			await expect(user.reload()).rejects.toThrow('Cannot reload a new record');
+		});
+
+		it('throws RecordNotFoundError if record was deleted', async () => {
+			const user = await User.create({ name: 'ToDelete', email: 'delete@example.com' });
+			const id = user.id as number;
+
+			// Delete via static method (user instance still thinks it's persisted)
+			await User.destroy(id);
+
+			// Reload should throw
+			await expect(user.reload()).rejects.toThrow(RecordNotFoundError);
 		});
 	});
 });

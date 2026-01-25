@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Model } from './model';
 import { setGlobalConnection } from './connection';
 import { RecordNotFoundError } from './errors';
-import { users } from './fixtures/schema';
+import { usersTable } from './fixtures/schema';
 
 // Mock database
 function createMockDb() {
@@ -43,7 +43,7 @@ describe('Model()', () => {
 	beforeEach(() => {
 		db = createMockDb();
 		setGlobalConnection(db as any);
-		User = Model(users);
+		User = Model(usersTable);
 	});
 
 	describe('convention detection', () => {

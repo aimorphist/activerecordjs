@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Model } from './model';
 import { setGlobalConnection } from './connection';
-import { users } from './fixtures/schema';
+import { usersTable } from './fixtures/schema';
 
 // Mock database (same pattern as model.test.ts)
 function createMockDb() {
@@ -43,7 +43,7 @@ describe('QueryBuilder', () => {
 	beforeEach(() => {
 		db = createMockDb();
 		setGlobalConnection(db as any);
-		User = Model(users);
+		User = Model(usersTable);
 	});
 
 	describe('where()', () => {

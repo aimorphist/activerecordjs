@@ -1,5 +1,5 @@
 import { Model } from '../model';
-import { users, posts } from './schema';
+import { usersTable, postsTable } from './schema';
 
-export const User = Model(users);
-export const Post = Model(posts);
+export const User = Model(usersTable);
+export const Post = Model(postsTable);
