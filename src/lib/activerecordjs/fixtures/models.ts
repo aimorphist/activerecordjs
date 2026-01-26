@@ -1,4 +1,4 @@
-import { Model } from '../model';
+\import { Model } from '../model';
 import { usersTable, postsTable } from './schema';
 
 export const User = Model(usersTable);
