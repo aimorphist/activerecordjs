@@ -4,7 +4,10 @@ import {
 	ConfigurationError,
 	SolanaRpcError,
 	WalletNotFoundError,
-	PipeNotFoundError
+	PipeNotFoundError,
+	BagsApiError,
+	NoClaimablePositionsError,
+	ClaimFailedError
 } from './errors';
 
 describe('Errors', () => {
@@ -43,5 +46,33 @@ describe('Errors', () => {
 
 		expect(error.message).toBe('Pipe not found: pipe_xyz');
 		expect(error.code).toBe('PIPE_NOT_FOUND');
+	});
+
+	// Bags.fm Errors
+	describe('Bags.fm Errors', () => {
+		it('BagsApiError is retryable', () => {
+			const error = new BagsApiError('API request failed');
+
+			expect(error.message).toBe('API request failed');
+			expect(error.code).toBe('BAGS_API_ERROR');
+			expect(error.retryable).toBe(true);
+		});
+
+		it('NoClaimablePositionsError formats wallet correctly', () => {
+			const error = new NoClaimablePositionsError('WalletAddress123');
+
+			expect(error.message).toBe('No claimable positions for wallet: WalletAddress123');
+			expect(error.code).toBe('NO_CLAIMABLE_POSITIONS');
+			expect(error.retryable).toBe(false);
+		});
+
+		it('ClaimFailedError includes tokenMint', () => {
+			const error = new ClaimFailedError('TokenMint123', 'Transaction timeout');
+
+			expect(error.message).toBe('Failed to claim for token TokenMint123: Transaction timeout');
+			expect(error.code).toBe('CLAIM_FAILED');
+			expect(error.tokenMint).toBe('TokenMint123');
+			expect(error.retryable).toBe(true);
+		});
 	});
 });

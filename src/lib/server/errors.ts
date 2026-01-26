@@ -72,3 +72,31 @@ export class PipeDisabledError extends BagpipeError {
 		this.name = 'PipeDisabledError';
 	}
 }
+
+// ─────────────────────────────────────────────────────────────
+// Bags.fm Errors
+// ─────────────────────────────────────────────────────────────
+
+export class BagsApiError extends BagpipeError {
+	constructor(message: string) {
+		super(message, 'BAGS_API_ERROR', true);
+		this.name = 'BagsApiError';
+	}
+}
+
+export class NoClaimablePositionsError extends BagpipeError {
+	constructor(wallet: string) {
+		super(`No claimable positions for wallet: ${wallet}`, 'NO_CLAIMABLE_POSITIONS', false);
+		this.name = 'NoClaimablePositionsError';
+	}
+}
+
+export class ClaimFailedError extends BagpipeError {
+	readonly tokenMint: string;
+
+	constructor(tokenMint: string, reason: string) {
+		super(`Failed to claim for token ${tokenMint}: ${reason}`, 'CLAIM_FAILED', true);
+		this.name = 'ClaimFailedError';
+		this.tokenMint = tokenMint;
+	}
+}

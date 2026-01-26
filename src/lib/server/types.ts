@@ -83,3 +83,28 @@ export type ExecutionStatus =
 // ─────────────────────────────────────────────────────────────
 
 export type PositionType = 'virtual' | 'damm' | 'custom_vault';
+
+// ─────────────────────────────────────────────────────────────
+// Bags.fm Types
+// ─────────────────────────────────────────────────────────────
+
+export interface ClaimablePosition {
+	baseMint: string;
+	virtualPoolClaimableAmount: number;
+	dammPoolClaimableAmount: number;
+	totalClaimableLamportsUserShare: number;
+	isMigrated: boolean;
+	positionType: PositionType;
+}
+
+export interface ClaimResult {
+	claimed: number;
+	totalLamports: bigint;
+	transactions: string[];
+	claims: Array<{
+		tokenMint: string;
+		amountLamports: bigint;
+		txSignature: string;
+		positionType: PositionType;
+	}>;
+}

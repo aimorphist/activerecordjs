@@ -22,6 +22,7 @@
 		"db:studio": "drizzle-kit studio",
 		"console": "bun scripts/console.ts",
 		"example:basic-split": "bun run examples/basic-split.ts",
+		"example:bags-redirect": "bun run examples/bags-redirect.ts",
 		"storybook": "storybook dev -p 6006",
 		"build-storybook": "storybook build"
 	},
@@ -70,6 +71,7 @@
 		"vitest-browser-svelte": "^2.0.1"
 	},
 	"dependencies": {
+		"@bagsfm/bags-sdk": "^1.2.7",
 		"@noble/hashes": "^2.0.1",
 		"@solana/spl-token": "^0.4.14",
 		"@solana/wallet-adapter-backpack": "^0.1.14",
