@@ -4,9 +4,18 @@ Blockers and challenges encountered.
 
 ---
 
-## No Current Blockers
+## Current Blockers
 
-All AR1-AR3 implementation is unblocked. The remaining AR3 work (Phase 5: types/docs) is straightforward.
+### TypeScript Self-Referential Type Error
+
+**Status**: BLOCKING AR3 completion
+**Impact**: Cannot mark AR3 complete; blocks AR4-AR9 progression
+
+The pattern `const ModelClass = this.constructor as typeof ModelClass` creates a circular type reference. This is used in 4 methods that need access to static properties from instance context.
+
+**Fix Required**: Refactor to use a proper type annotation. Options documented in [issues.md](./issues.md).
+
+**Estimated Effort**: Small (2-3 line changes per occurrence)
 
 ---
 
@@ -43,3 +52,15 @@ class Post extends Model(postsTable) {
 ```
 
 **Approach needed**: Research TypeScript patterns for self-referential generic inference.
+
+---
+
+## Resolved Blockers
+
+### Class Mixin Pattern Discovery (AR3 Phase 1)
+
+**Was blocking**: AR3 implementation
+**Resolution**: Discovered factory-returns-class pattern enables `class User extends Model(table)` syntax while preserving static property inheritance.
+**Date resolved**: 2026-01-24
+
+See [learnings.md](./learnings.md) for technical details.
