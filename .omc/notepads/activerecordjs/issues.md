@@ -4,46 +4,29 @@ Known issues and workarounds.
 
 ---
 
-## TypeScript Self-Referential Type Error (AR3 BLOCKER)
+## TypeScript Self-Referential Type Error (RESOLVED)
 
-**Status**: Open (BLOCKING AR3 completion)
-**Severity**: HIGH
-**Date**: 2026-01-26
+**Status**: ✅ Resolved (2026-01-26)
+**Severity**: HIGH (was blocking AR3)
 **File**: `src/lib/activerecordjs/model.ts`
 **Lines**: 125, 173, 220, 242
 
 **Issue**: TypeScript error: `'ModelClass' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.`
 
-**Code Pattern**:
-```typescript
-const ModelClass = this.constructor as typeof ModelClass;  // Self-referential!
-```
-
-**Root Cause**: The variable `ModelClass` cannot be typed as `typeof ModelClass` because that creates a circular reference during type inference.
-
-**Fix Options**:
-1. **Type assertion approach**: Use a base class type instead of self-reference
-   ```typescript
-   const ModelClass = this.constructor as typeof BaseModel;
-   ```
-2. **Generic constraint approach**: Pass model class as generic parameter
-3. **Interface approach**: Define `ModelStatic` interface and cast to that
-
-**Workaround**: Tests pass despite TS errors because Bun runtime ignores type errors.
+**Resolution**: Added `ModelStatic` type interface and replaced all `typeof ModelClass` with `ModelStatic`. Also fixed test files that had `typeof users` instead of `typeof usersTable`.
 
 ---
 
-## Fixture File Syntax Error
+## Fixture File Syntax Error (RESOLVED)
 
-**Status**: Open
+**Status**: ✅ Resolved (2026-01-26)
 **Severity**: MEDIUM
-**Date**: 2026-01-26
 **File**: `src/lib/activerecordjs/fixtures/models.ts`
 **Line**: 1
 
-**Issue**: Line 1 contains `\import` instead of `import` (errant backslash character).
+**Issue**: Line 1 contained `\import` instead of `import`.
 
-**Fix**: Remove the backslash.
+**Resolution**: Removed the backslash.
 
 ---
 

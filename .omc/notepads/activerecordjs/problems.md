@@ -6,16 +6,17 @@ Blockers and challenges encountered.
 
 ## Current Blockers
 
-### TypeScript Self-Referential Type Error
+None. AR3 complete, AR4 ready to begin.
 
-**Status**: BLOCKING AR3 completion
-**Impact**: Cannot mark AR3 complete; blocks AR4-AR9 progression
+---
 
-The pattern `const ModelClass = this.constructor as typeof ModelClass` creates a circular type reference. This is used in 4 methods that need access to static properties from instance context.
+## Resolved Blockers
 
-**Fix Required**: Refactor to use a proper type annotation. Options documented in [issues.md](./issues.md).
+### TypeScript Self-Referential Type Error (RESOLVED 2026-01-26)
 
-**Estimated Effort**: Small (2-3 line changes per occurrence)
+**Was blocking**: AR3 completion
+**Resolution**: Added `ModelStatic` type interface and replaced self-referential `typeof ModelClass` pattern with proper type annotation. Also fixed test files with incorrect type references.
+**Files changed**: model.ts, crud.integration.test.ts, model.test.ts, query-builder.integration.test.ts, query-builder.test.ts
 
 ---
 

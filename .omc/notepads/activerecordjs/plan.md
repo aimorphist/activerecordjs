@@ -1,8 +1,8 @@
 # ActiveRecordJS Implementation Plan
 
 > **Last Updated**: 2026-01-26
-> **Status**: AR3 in progress (Phase 5 blocked by TypeScript errors)
-> **Next Milestone**: Fix TS errors → Complete AR3 → Begin AR4
+> **Status**: AR3 complete, AR4 ready to begin
+> **Next Milestone**: AR4 (Lifecycle Hooks)
 
 ---
 
@@ -10,7 +10,7 @@
 
 ActiveRecordJS brings Rails-style ActiveRecord ergonomics to TypeScript, built on Drizzle ORM. Target: PostgreSQL. Philosophy: ergonomic API layer on top of Drizzle, not a replacement.
 
-**Total Progress**: AR1-AR2 complete, AR3 ~95% complete (blocked), AR4-AR9 planned
+**Total Progress**: AR1-AR3 complete, AR4-AR9 planned
 
 ---
 
@@ -20,7 +20,7 @@ ActiveRecordJS brings Rails-style ActiveRecord ergonomics to TypeScript, built o
 |-----------|-------------|--------|------------|-------|
 | **AR1** | Foundation (Model, CRUD) | ✅ Complete | - | 43 unit, 21 integration |
 | **AR2** | Query Builder | ✅ Complete | AR1 | 24 unit, 24 integration |
-| **AR3** | Validations (Zod-based) | 🔴 Blocked | AR2 | 38 validation tests |
+| **AR3** | Validations (Zod-based) | ✅ Complete | AR2 | 38 validation tests |
 | **AR4** | Lifecycle Hooks | ⏳ Ready | AR3 | - |
 | **AR5** | Associations (belongsTo, hasOne) | ⏳ Planned | AR4 | - |
 | **AR6** | Associations (hasMany, HABTM) | ⏳ Planned | AR5 | - |
@@ -32,23 +32,16 @@ ActiveRecordJS brings Rails-style ActiveRecord ergonomics to TypeScript, built o
 
 ## Current Blockers
 
-| Blocker | Severity | File | Details |
-|---------|----------|------|---------|
-| TypeScript self-ref error | HIGH | model.ts:125,173,220,242 | `ModelClass` references itself |
-| Fixture syntax error | MEDIUM | fixtures/models.ts:1 | `\import` instead of `import` |
-
-See [issues.md](./issues.md) for full details and workarounds.
+None. All ActiveRecordJS milestones through AR3 are unblocked.
 
 ---
 
 ## Next Actions
 
-1. **Fix TypeScript errors** in `model.ts` (self-referential type issue)
-2. **Fix fixture bug** in `fixtures/models.ts` (remove backslash)
-3. **Verify** all 150 tests still pass
-4. **Verify** `bun run check` passes for activerecordjs files
-5. **Mark AR3 complete** and update this plan
-6. **Begin AR4** (Lifecycle Hooks)
+1. **Begin AR4** (Lifecycle Hooks) - design hook system
+2. Create `hooks.test.ts` with test cases for beforeSave, afterSave, etc.
+3. Implement hook execution in save/create/update/destroy methods
+4. Add integration tests for hooks
 
 ---
 
@@ -104,11 +97,11 @@ bun test src/lib/activerecordjs/query-builder.integration.test.ts
 
 ---
 
-### AR3: Validations 🔴 BLOCKED (95% complete)
+### AR3: Validations ✅ COMPLETE
 
 **Scope**: Zod-based field validation + custom validators
 
-**Implementation** (DONE):
+**Implementation**:
 - Zod validators on `static validations` property
 - Custom validators in `$custom` array
 - Methods: `validate()`, `isValid()`, `clearErrors()`
@@ -122,9 +115,7 @@ bun test src/lib/activerecordjs/query-builder.integration.test.ts
 | 2 | Add ValidationError class | ✅ Complete |
 | 3 | Implement validation system | ✅ Complete |
 | 4 | Integrate into save() | ✅ Complete |
-| 5 | Fix types, verify, document | 🔴 Blocked |
-
-**Current Blocker**: TypeScript errors in model.ts (see Blockers section)
+| 5 | Fix types, verify, document | ✅ Complete |
 
 **Verification**:
 ```bash
@@ -133,14 +124,14 @@ bun test src/lib/activerecordjs/validations.integration.test.ts
 bun run check 2>&1 | grep activerecordjs  # Should show 0 errors
 ```
 
-**Success Criteria**:
+**Success Criteria**: ✅ All met
 - [x] `user.isValid()` returns boolean
 - [x] `user.validate()` throws on invalid
 - [x] `user.errors` contains field-level messages
 - [x] `save()` auto-validates
 - [x] `save({ validate: false })` skips validation
-- [ ] TypeScript compiles without errors
-- [ ] All 38 validation tests pass (currently: ✅)
+- [x] TypeScript compiles without errors
+- [x] All 38 validation tests pass
 
 ---
 
@@ -408,10 +399,10 @@ bun run lint
 ## Dependency Graph
 
 ```
-AR1 (Foundation)
- └── AR2 (Query Builder)
-      └── AR3 (Validations) ← CURRENT
-           ├── AR4 (Hooks)
+AR1 (Foundation) ✅
+ └── AR2 (Query Builder) ✅
+      └── AR3 (Validations) ✅
+           ├── AR4 (Hooks) ← NEXT
            │    └── AR5 (belongsTo, hasOne)
            │         └── AR6 (hasMany, HABTM)
            │              └── AR9 (Advanced)
