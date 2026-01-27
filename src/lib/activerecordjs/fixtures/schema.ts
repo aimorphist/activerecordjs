@@ -16,3 +16,12 @@ export const postsTable = pgTable('posts', {
 	createdAt: timestamp('created_at').defaultNow(),
 	updatedAt: timestamp('updated_at').defaultNow()
 });
+
+export const commentsTable = pgTable('comments', {
+	id: serial('id').primaryKey(),
+	body: text('body').notNull(),
+	postId: integer('post_id').references(() => postsTable.id),
+	userId: integer('user_id').references(() => usersTable.id),
+	createdAt: timestamp('created_at').defaultNow(),
+	updatedAt: timestamp('updated_at').defaultNow()
+});

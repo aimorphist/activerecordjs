@@ -1,7 +1,7 @@
 {
   "active": true,
-  "started_at": "2026-01-26T22:28:50.981Z",
-  "original_prompt": "ultrawork: @.omc/plans/ registry-api.md",
-  "reinforcement_count": 7,
-  "last_checked_at": "2026-01-27T01:29:05.709Z"
+  "started_at": "2026-01-27T01:50:00.000Z",
+  "original_prompt": "Implement AR5 Associations (belongsTo, hasMany, CollectionProxy) per ar5-associations-core.md plan",
+  "reinforcement_count": 1,
+  "last_checked_at": "2026-01-27T01:59:41.617Z"
 }

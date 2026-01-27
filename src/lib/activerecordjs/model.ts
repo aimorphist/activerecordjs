@@ -5,6 +5,8 @@ import { z, ZodSchema } from 'zod';
 import { getGlobalConnection, setGlobalConnection } from './connection';
 import { RecordNotFoundError, ValidationError } from './errors';
 import { QueryBuilder } from './query-builder';
+import { loadBelongsTo } from './associations';
+import { CollectionProxy } from './collection-proxy';
 
 // Validation types
 type CustomValidator<T> = (instance: T) => void | Promise<void>;
@@ -91,10 +93,12 @@ export function Model<T extends PgTable>(table: T) {
 		_data: Record<string, unknown>;
 		_persisted: boolean;
 		_errors: Record<string, string[]> = {};
+		_associations: Record<string, unknown> = {};
 
 		// Static metadata
 		static table = table;
 		static tableName = conventions.tableName;
+		static modelName = conventions.modelName;
 		static primaryKey = conventions.primaryKey;
 		static timestamps = conventions.timestamps;
 
@@ -111,6 +115,10 @@ export function Model<T extends PgTable>(table: T) {
 		static beforeDestroy: HookFunction[] = [];
 		static afterDestroy: HookFunction[] = [];
 
+		// Association declarations (AR5)
+		static belongsTo: Record<string, any> = {};
+		static hasMany: Record<string, any> = {};
+
 		constructor(attrs: Record<string, unknown> = {}, persisted = false) {
 			this._data = { ...attrs };
 			this._persisted = persisted;
@@ -122,6 +130,33 @@ export function Model<T extends PgTable>(table: T) {
 					if (prop in target || prop.startsWith('_')) {
 						return (target as any)[prop];
 					}
+
+					// Check for belongsTo association
+					const ModelClass = target.constructor as any;
+					if (ModelClass.belongsTo && prop in ModelClass.belongsTo) {
+						// Return cached or load
+						if (prop in target._associations) {
+							return Promise.resolve(target._associations[prop]);
+						}
+						return loadBelongsTo(target, prop, ModelClass.belongsTo[prop])
+							.then((result: any) => {
+								target._associations[prop] = result;
+								return result;
+							});
+					}
+
+					// Check for hasMany association
+					if (ModelClass.hasMany && prop in ModelClass.hasMany) {
+						// Return a CollectionProxy
+						// CRITICAL: Use ModelClass.modelName (e.g., 'User'), NOT ModelClass.tableName (e.g., 'users')
+						return new CollectionProxy(
+							target,
+							prop,
+							ModelClass.hasMany[prop],
+							ModelClass.modelName  // Model name (e.g., 'User'), not table name (e.g., 'users')
+						);
+					}
+
 					// Then check data
 					return target._data[prop];
 				},
@@ -319,6 +354,7 @@ export function Model<T extends PgTable>(table: T) {
 			// Reset all data to match database state
 			this._data = { ...result };
 			this._errors = {};
+			this._associations = {};
 
 			return this;
 		}

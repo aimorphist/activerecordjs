@@ -22,6 +22,22 @@ export interface LifecycleHooks<T> {
 	afterDestroy: AfterHook<T>[];
 }
 
+// Association configuration types
+export type ModelThunk = () => any;  // Returns a Model class
+
+export interface BelongsToConfig {
+	model: ModelThunk;
+	foreignKey?: string;  // Optional, inferred from association name
+}
+
+export interface HasManyConfig {
+	model: ModelThunk;
+	foreignKey?: string;  // Optional, inferred from parent model name
+}
+
+export type BelongsToDeclarations = Record<string, BelongsToConfig>;
+export type HasManyDeclarations = Record<string, HasManyConfig>;
+
 export interface SaveOptions {
 	validate?: boolean;
 }
