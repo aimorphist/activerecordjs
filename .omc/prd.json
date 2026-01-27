@@ -1,0 +1,138 @@
+{
+  "project": "ActiveRecordJS AR4: Lifecycle Hooks",
+  "branchName": "ralph/ar4-lifecycle-hooks",
+  "description": "Add Rails-style lifecycle callbacks (beforeSave, afterSave, beforeCreate, afterCreate, beforeUpdate, afterUpdate, beforeDestroy, afterDestroy) to ActiveRecordJS models.",
+  "status": "COMPLETE",
+  "completedAt": "2026-01-26",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Define hook type interfaces",
+      "description": "As a developer, I want TypeScript interfaces for hooks so that I have type safety when defining callbacks.",
+      "acceptanceCriteria": [
+        "BeforeHook<T> and AfterHook<T> types defined in types.ts",
+        "Hook types support async functions",
+        "Hook types receive model instance as parameter",
+        "Typecheck passes: bun run check"
+      ],
+      "priority": 1,
+      "passes": true
+    },
+    {
+      "id": "US-002",
+      "title": "Add hook static properties to Model",
+      "description": "As a developer, I want to declare hooks as static properties on my model class so that I can define callbacks declaratively.",
+      "acceptanceCriteria": [
+        "Static properties: beforeSave, afterSave, beforeCreate, afterCreate, beforeUpdate, afterUpdate, beforeDestroy, afterDestroy",
+        "Each property accepts an array of hook functions",
+        "Subclasses can override parent hooks",
+        "Typecheck passes: bun run check"
+      ],
+      "priority": 2,
+      "passes": true
+    },
+    {
+      "id": "US-003",
+      "title": "Implement beforeSave and afterSave hooks",
+      "description": "As a developer, I want beforeSave to fire before any save operation and afterSave to fire after successful save so that I can transform data and trigger side effects.",
+      "acceptanceCriteria": [
+        "beforeSave fires before both create and update",
+        "afterSave fires after successful save (both create and update)",
+        "Hooks receive model instance",
+        "Hooks can modify model attributes",
+        "Unit tests in hooks.test.ts pass",
+        "Typecheck passes: bun run check"
+      ],
+      "priority": 3,
+      "passes": true
+    },
+    {
+      "id": "US-004",
+      "title": "Implement beforeCreate and afterCreate hooks",
+      "description": "As a developer, I want beforeCreate/afterCreate to fire only for new records so that I can handle creation-specific logic.",
+      "acceptanceCriteria": [
+        "beforeCreate fires before INSERT (new records only)",
+        "afterCreate fires after successful INSERT",
+        "Does NOT fire on update operations",
+        "Hook execution order: beforeSave -> beforeCreate -> INSERT -> afterCreate -> afterSave",
+        "Unit tests pass",
+        "Typecheck passes: bun run check"
+      ],
+      "priority": 4,
+      "passes": true
+    },
+    {
+      "id": "US-005",
+      "title": "Implement beforeUpdate and afterUpdate hooks",
+      "description": "As a developer, I want beforeUpdate/afterUpdate to fire only for existing records so that I can handle update-specific logic.",
+      "acceptanceCriteria": [
+        "beforeUpdate fires before UPDATE (existing records only)",
+        "afterUpdate fires after successful UPDATE",
+        "Does NOT fire on create operations",
+        "Hook execution order: beforeSave -> beforeUpdate -> UPDATE -> afterUpdate -> afterSave",
+        "Unit tests pass",
+        "Typecheck passes: bun run check"
+      ],
+      "priority": 5,
+      "passes": true
+    },
+    {
+      "id": "US-006",
+      "title": "Implement beforeDestroy and afterDestroy hooks",
+      "description": "As a developer, I want beforeDestroy/afterDestroy hooks so that I can handle cleanup and logging on record deletion.",
+      "acceptanceCriteria": [
+        "beforeDestroy fires before DELETE",
+        "afterDestroy fires after successful DELETE",
+        "Hook execution order: beforeDestroy -> DELETE -> afterDestroy",
+        "Unit tests pass",
+        "Typecheck passes: bun run check"
+      ],
+      "priority": 6,
+      "passes": true
+    },
+    {
+      "id": "US-007",
+      "title": "Support async hooks",
+      "description": "As a developer, I want hooks to support async functions so that I can perform async operations like API calls or additional DB queries.",
+      "acceptanceCriteria": [
+        "Async hooks are awaited before proceeding",
+        "Multiple async hooks execute in sequence (not parallel)",
+        "Errors in async hooks propagate correctly",
+        "Integration tests with real async operations pass",
+        "Typecheck passes: bun run check"
+      ],
+      "priority": 7,
+      "passes": true
+    },
+    {
+      "id": "US-008",
+      "title": "Hook abort capability",
+      "description": "As a developer, I want beforeX hooks to be able to abort the operation so that I can implement conditional saves/deletes.",
+      "acceptanceCriteria": [
+        "Throwing an error in beforeSave/beforeCreate/beforeUpdate aborts the operation",
+        "Throwing in beforeDestroy aborts deletion",
+        "Error is propagated to caller",
+        "After hooks do NOT fire when before hook aborts",
+        "Unit tests for abort behavior pass",
+        "Typecheck passes: bun run check"
+      ],
+      "priority": 8,
+      "passes": true
+    },
+    {
+      "id": "US-009",
+      "title": "Integration tests for hooks",
+      "description": "As a developer, I want integration tests that verify hooks work with real database operations so that I have confidence in production behavior.",
+      "acceptanceCriteria": [
+        "hooks.integration.test.ts created",
+        "Tests verify hooks fire in correct order with real DB",
+        "Tests verify data modifications in hooks persist",
+        "Tests verify abort behavior with real transactions",
+        "All integration tests pass",
+        "All 150+ tests still pass: bun test --filter activerecord"
+      ],
+      "priority": 9,
+      "passes": true
+    }
+  ]
+}

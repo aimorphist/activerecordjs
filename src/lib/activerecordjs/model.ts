@@ -52,6 +52,16 @@ function detectConventions<T extends PgTable>(table: T) {
 	return { primaryKey, timestamps, tableName, modelName };
 }
 
+// Helper function to run hooks sequentially
+async function runHooks(hooks: Array<(instance: any) => void | Promise<void>>, instance: any): Promise<void> {
+	for (const hook of hooks) {
+		await hook(instance);
+	}
+}
+
+// Hook function type
+export type HookFunction = (instance: any) => void | Promise<void>;
+
 // Type for the static side of the Model class
 type ModelStatic = {
 	table: PgTable;
@@ -59,6 +69,14 @@ type ModelStatic = {
 	primaryKey: string;
 	timestamps: { createdAt?: string; updatedAt?: string };
 	validations: Record<string, unknown>;
+	beforeSave: HookFunction[];
+	afterSave: HookFunction[];
+	beforeCreate: HookFunction[];
+	afterCreate: HookFunction[];
+	beforeUpdate: HookFunction[];
+	afterUpdate: HookFunction[];
+	beforeDestroy: HookFunction[];
+	afterDestroy: HookFunction[];
 	new(attrs?: Record<string, unknown>, persisted?: boolean): any;
 };
 
@@ -82,6 +100,16 @@ export function Model<T extends PgTable>(table: T) {
 
 		// Placeholder for subclass validations (AR3)
 		static validations: Record<string, unknown> = {};
+
+		// Lifecycle hooks (AR4)
+		static beforeSave: HookFunction[] = [];
+		static afterSave: HookFunction[] = [];
+		static beforeCreate: HookFunction[] = [];
+		static afterCreate: HookFunction[] = [];
+		static beforeUpdate: HookFunction[] = [];
+		static afterUpdate: HookFunction[] = [];
+		static beforeDestroy: HookFunction[] = [];
+		static afterDestroy: HookFunction[] = [];
 
 		constructor(attrs: Record<string, unknown> = {}, persisted = false) {
 			this._data = { ...attrs };
@@ -194,8 +222,14 @@ export function Model<T extends PgTable>(table: T) {
 				this._data[timestamps.updatedAt] = new Date();
 			}
 
+			// Run beforeSave hooks
+			await runHooks(ModelClass.beforeSave, this);
+
 			if (this._persisted) {
 				// Update existing record
+				// Run beforeUpdate hooks
+				await runHooks(ModelClass.beforeUpdate, this);
+
 				const id = this._data[primaryKey] as number;
 				const updateData = { ...this._data };
 				delete updateData[primaryKey];
@@ -204,8 +238,14 @@ export function Model<T extends PgTable>(table: T) {
 					.update(ModelClass.table)
 					.set(updateData)
 					.where(eq((ModelClass.table as any)[primaryKey], id));
+
+				// Run afterUpdate hooks
+				await runHooks(ModelClass.afterUpdate, this);
 			} else {
 				// Insert new record
+				// Run beforeCreate hooks
+				await runHooks(ModelClass.beforeCreate, this);
+
 				if (timestamps.createdAt && !this._data[timestamps.createdAt]) {
 					this._data[timestamps.createdAt] = new Date();
 				}
@@ -214,7 +254,13 @@ export function Model<T extends PgTable>(table: T) {
 
 				Object.assign(this._data, result);
 				this._persisted = true;
+
+				// Run afterCreate hooks
+				await runHooks(ModelClass.afterCreate, this);
 			}
+
+			// Run afterSave hooks
+			await runHooks(ModelClass.afterSave, this);
 
 			return this;
 		}
@@ -232,11 +278,17 @@ export function Model<T extends PgTable>(table: T) {
 			const { primaryKey } = ModelClass;
 			const id = this._data[primaryKey] as number;
 
+			// Run beforeDestroy hooks
+			await runHooks(ModelClass.beforeDestroy, this);
+
 			await (db as any)
 				.delete(ModelClass.table)
 				.where(eq((ModelClass.table as any)[primaryKey], id));
 
 			this._persisted = false;
+
+			// Run afterDestroy hooks
+			await runHooks(ModelClass.afterDestroy, this);
 		}
 
 		/**

@@ -8,6 +8,20 @@ export type CustomValidator<T> = (instance: T) => void | Promise<void>;
 export type ValidationValue<T = any> = ZodSchema | CustomValidator<T>[];
 export type Validations<T = any> = Record<string, ValidationValue<T>>;
 
+export type BeforeHook<T> = (instance: T) => void | Promise<void>;
+export type AfterHook<T> = (instance: T) => void | Promise<void>;
+
+export interface LifecycleHooks<T> {
+	beforeSave: BeforeHook<T>[];
+	afterSave: AfterHook<T>[];
+	beforeCreate: BeforeHook<T>[];
+	afterCreate: AfterHook<T>[];
+	beforeUpdate: BeforeHook<T>[];
+	afterUpdate: AfterHook<T>[];
+	beforeDestroy: BeforeHook<T>[];
+	afterDestroy: AfterHook<T>[];
+}
+
 export interface SaveOptions {
 	validate?: boolean;
 }
@@ -30,6 +44,16 @@ export interface ModelStatic<T> {
 	readonly primaryKey: string;
 	readonly timestamps: { createdAt?: string; updatedAt?: string };
 	readonly validations: Validations<T>;
+
+	// Lifecycle Hooks
+	readonly beforeSave?: BeforeHook<T>[];
+	readonly afterSave?: AfterHook<T>[];
+	readonly beforeCreate?: BeforeHook<T>[];
+	readonly afterCreate?: AfterHook<T>[];
+	readonly beforeUpdate?: BeforeHook<T>[];
+	readonly afterUpdate?: AfterHook<T>[];
+	readonly beforeDestroy?: BeforeHook<T>[];
+	readonly afterDestroy?: AfterHook<T>[];
 }
 
 export interface ModelInstance {

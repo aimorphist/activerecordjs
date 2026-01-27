@@ -1,0 +1,50 @@
+# Ralph Progress Log
+Started: 2026-01-26T00:00:00Z
+Project: ActiveRecordJS AR4 - Lifecycle Hooks
+
+## Codebase Patterns
+
+### Model Architecture
+- Model uses class mixin pattern: `class User extends Model(usersTable)`
+- Static properties on subclass accessible via `this.constructor`
+- Proxy pattern for dynamic attribute access
+- `ModelStatic` type for static class reference
+
+### Existing Hook Points (in model.ts)
+- `save()` method handles both create (new records) and update (persisted records)
+- `destroy()` method handles deletion
+- `_persisted` flag distinguishes new vs existing records
+- Validation hooks pattern: `static validations = {...}` can inform hook design
+
+### Test Patterns
+- Unit tests: `*.test.ts` with mocked DB connection
+- Integration tests: `*.integration.test.ts` with real Postgres
+- Test setup in `setup.integration.ts`
+- Global setup in `globalSetup.integration.ts`
+
+### Key Files
+- `src/lib/activerecordjs/model.ts` - Core model, will add hook execution here
+- `src/lib/activerecordjs/types.ts` - Add hook type definitions here
+- `src/lib/activerecordjs/fixtures/models.ts` - Test models, add hooks here for testing
+
+---
+
+## User Stories Progress
+
+| ID | Title | Status |
+|----|-------|--------|
+| US-001 | Define hook type interfaces | Pending |
+| US-002 | Add hook static properties to Model | Pending |
+| US-003 | Implement beforeSave and afterSave hooks | Pending |
+| US-004 | Implement beforeCreate and afterCreate hooks | Pending |
+| US-005 | Implement beforeUpdate and afterUpdate hooks | Pending |
+| US-006 | Implement beforeDestroy and afterDestroy hooks | Pending |
+| US-007 | Support async hooks | Pending |
+| US-008 | Hook abort capability | Pending |
+| US-009 | Integration tests for hooks | Pending |
+
+---
+
+## Session Log
+
+(No sessions yet)

@@ -1,8 +1,8 @@
 # ActiveRecordJS Implementation Plan
 
 > **Last Updated**: 2026-01-26
-> **Status**: AR3 complete, AR4 ready to begin
-> **Next Milestone**: AR4 (Lifecycle Hooks)
+> **Status**: AR4 complete, AR5 ready to begin
+> **Next Milestone**: AR5 (Associations - belongsTo, hasOne)
 
 ---
 
@@ -10,7 +10,7 @@
 
 ActiveRecordJS brings Rails-style ActiveRecord ergonomics to TypeScript, built on Drizzle ORM. Target: PostgreSQL. Philosophy: ergonomic API layer on top of Drizzle, not a replacement.
 
-**Total Progress**: AR1-AR3 complete, AR4-AR9 planned
+**Total Progress**: AR1-AR4 complete, AR5-AR9 planned
 
 ---
 
@@ -21,7 +21,7 @@ ActiveRecordJS brings Rails-style ActiveRecord ergonomics to TypeScript, built o
 | **AR1** | Foundation (Model, CRUD) | ✅ Complete | - | 43 unit, 21 integration |
 | **AR2** | Query Builder | ✅ Complete | AR1 | 24 unit, 24 integration |
 | **AR3** | Validations (Zod-based) | ✅ Complete | AR2 | 38 validation tests |
-| **AR4** | Lifecycle Hooks | ⏳ Ready | AR3 | - |
+| **AR4** | Lifecycle Hooks | ✅ Complete | AR3 | 31 unit, 17 integration |
 | **AR5** | Associations (belongsTo, hasOne) | ⏳ Planned | AR4 | - |
 | **AR6** | Associations (hasMany, HABTM) | ⏳ Planned | AR5 | - |
 | **AR7** | Transactions | ⏳ Planned | AR3 | - |
@@ -38,10 +38,10 @@ None. All ActiveRecordJS milestones through AR3 are unblocked.
 
 ## Next Actions
 
-1. **Begin AR4** (Lifecycle Hooks) - design hook system
-2. Create `hooks.test.ts` with test cases for beforeSave, afterSave, etc.
-3. Implement hook execution in save/create/update/destroy methods
-4. Add integration tests for hooks
+1. **Begin AR5** (Associations - belongsTo, hasOne)
+2. Design eager loading API (`includes()` vs `with()`)
+3. Implement lazy loading for single-record associations
+4. Add TypeScript typing for association returns
 
 ---
 
@@ -135,44 +135,49 @@ bun run check 2>&1 | grep activerecordjs  # Should show 0 errors
 
 ---
 
-### AR4: Lifecycle Hooks ⏳ READY (blocked by AR3)
+### AR4: Lifecycle Hooks ✅ COMPLETE
 
 **Scope**: Rails-style callbacks: before/after save, create, update, destroy
 
-**API Design**:
+**Implementation**:
+- 8 hook types: beforeSave, afterSave, beforeCreate, afterCreate, beforeUpdate, afterUpdate, beforeDestroy, afterDestroy
+- Flat static arrays: `static beforeSave: HookFunction[] = []`
+- `runHooks()` helper for sequential async execution
+- Hooks receive model instance and can modify attributes
+- Throwing in before hook aborts operation
+
+**API**:
 ```typescript
 class User extends Model(usersTable) {
-  static beforeSave = [
+  static beforeSave: HookFunction[] = [
     async (user) => { user.email = user.email?.toLowerCase(); }
   ];
 
-  static afterCreate = [
+  static afterCreate: HookFunction[] = [
     async (user) => { await sendWelcomeEmail(user.email); }
   ];
 }
 ```
 
-**Implementation Plan**:
-1. Define hook types: `BeforeHook<T>`, `AfterHook<T>`
-2. Add static properties for each hook type
-3. Execute hooks in order: before → operation → after
-4. Support async hooks
-5. Add tests for each hook point
+**Hook Execution Order**:
+- CREATE: beforeSave → beforeCreate → INSERT → afterCreate → afterSave
+- UPDATE: beforeSave → beforeUpdate → UPDATE → afterUpdate → afterSave
+- DESTROY: beforeDestroy → DELETE → afterDestroy
 
 **Verification**:
 ```bash
-bun test src/lib/activerecordjs/hooks.test.ts  # To be created
-bun test src/lib/activerecordjs/hooks.integration.test.ts  # To be created
+bun test src/lib/activerecordjs/hooks.test.ts
+bun test src/lib/activerecordjs/hooks.integration.test.ts
 ```
 
-**Success Criteria**:
-- [ ] beforeSave fires before save()
-- [ ] afterSave fires after successful save()
-- [ ] beforeCreate/afterCreate for new records
-- [ ] beforeUpdate/afterUpdate for existing records
-- [ ] beforeDestroy/afterDestroy for destroy()
-- [ ] Async hooks work correctly
-- [ ] Hook can abort operation (return false?)
+**Success Criteria**: ✅ All met
+- [x] beforeSave fires before save()
+- [x] afterSave fires after successful save()
+- [x] beforeCreate/afterCreate for new records
+- [x] beforeUpdate/afterUpdate for existing records
+- [x] beforeDestroy/afterDestroy for destroy()
+- [x] Async hooks work correctly
+- [x] Hook can abort operation (throw error)
 
 ---
 
@@ -392,7 +397,9 @@ bun run lint
 | validations.test.ts | 38 |
 | validations.integration.test.ts | varies |
 | crud.integration.test.ts | 21 |
-| **Total** | **150** |
+| hooks.test.ts | 31 |
+| hooks.integration.test.ts | 17 |
+| **Total** | **198** |
 
 ---
 
@@ -402,8 +409,8 @@ bun run lint
 AR1 (Foundation) ✅
  └── AR2 (Query Builder) ✅
       └── AR3 (Validations) ✅
-           ├── AR4 (Hooks) ← NEXT
-           │    └── AR5 (belongsTo, hasOne)
+           ├── AR4 (Hooks) ✅
+           │    └── AR5 (belongsTo, hasOne) ← NEXT
            │         └── AR6 (hasMany, HABTM)
            │              └── AR9 (Advanced)
            ├── AR7 (Transactions)
