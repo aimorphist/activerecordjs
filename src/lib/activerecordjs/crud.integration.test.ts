@@ -10,7 +10,7 @@ import { RecordNotFoundError } from './errors';
 import { usersTable } from './fixtures/schema';
 
 describe('CRUD Integration Tests', () => {
-	let User: ReturnType<typeof Model<typeof users>>;
+	let User: ReturnType<typeof Model<typeof usersTable>>;
 
 	beforeAll(async () => {
 		await setupTestDb();

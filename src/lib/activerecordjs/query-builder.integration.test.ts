@@ -9,7 +9,7 @@ import { Model } from './model';
 import { usersTable } from './fixtures/schema';
 
 describe('QueryBuilder Integration Tests', () => {
-	let User: ReturnType<typeof Model<typeof users>>;
+	let User: ReturnType<typeof Model<typeof usersTable>>;
 
 	beforeAll(async () => {
 		await setupTestDb();

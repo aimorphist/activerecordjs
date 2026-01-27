@@ -52,6 +52,16 @@ function detectConventions<T extends PgTable>(table: T) {
 	return { primaryKey, timestamps, tableName, modelName };
 }
 
+// Type for the static side of the Model class
+type ModelStatic = {
+	table: PgTable;
+	tableName: string;
+	primaryKey: string;
+	timestamps: { createdAt?: string; updatedAt?: string };
+	validations: Record<string, unknown>;
+	new(attrs?: Record<string, unknown>, persisted?: boolean): any;
+};
+
 export function Model<T extends PgTable>(table: T) {
 	const conventions = detectConventions(table);
 
@@ -122,7 +132,7 @@ export function Model<T extends PgTable>(table: T) {
 		}
 
 		validate(): void {
-			const ModelClass = this.constructor as typeof ModelClass;
+			const ModelClass = this.constructor as ModelStatic;
 			const validations = ModelClass.validations as Record<string, ValidationValue>;
 			this._errors = {};
 
@@ -170,7 +180,7 @@ export function Model<T extends PgTable>(table: T) {
 		// Instance methods
 		async save(options: SaveOptions = {}): Promise<this> {
 			const { validate = true } = options;
-			const ModelClass = this.constructor as typeof ModelClass;
+			const ModelClass = this.constructor as ModelStatic;
 			const db = getGlobalConnection();
 			const { primaryKey, timestamps } = ModelClass;
 
@@ -217,7 +227,7 @@ export function Model<T extends PgTable>(table: T) {
 		async destroy(): Promise<void> {
 			if (!this._persisted) return;
 
-			const ModelClass = this.constructor as typeof ModelClass;
+			const ModelClass = this.constructor as ModelStatic;
 			const db = getGlobalConnection();
 			const { primaryKey } = ModelClass;
 			const id = this._data[primaryKey] as number;
@@ -239,7 +249,7 @@ export function Model<T extends PgTable>(table: T) {
 				throw new Error('Cannot reload a new record that has not been saved');
 			}
 
-			const ModelClass = this.constructor as typeof ModelClass;
+			const ModelClass = this.constructor as ModelStatic;
 			const db = getGlobalConnection();
 			const { primaryKey } = ModelClass;
 			const id = this._data[primaryKey] as number;

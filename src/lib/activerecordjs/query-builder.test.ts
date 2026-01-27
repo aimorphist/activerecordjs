@@ -38,7 +38,7 @@ function createMockDb() {
 
 describe('QueryBuilder', () => {
 	let db: ReturnType<typeof createMockDb>;
-	let User: ReturnType<typeof Model<typeof users>>;
+	let User: ReturnType<typeof Model<typeof usersTable>>;
 
 	beforeEach(() => {
 		db = createMockDb();
