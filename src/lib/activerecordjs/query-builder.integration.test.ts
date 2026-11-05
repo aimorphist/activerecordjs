@@ -171,10 +171,7 @@ describe('QueryBuilder Integration Tests', () => {
 
 	describe('findOrCreate()', () => {
 		it('finds existing record', async () => {
-			const user = await User.findOrCreate(
-				{ email: 'alice@example.com' },
-				{ name: 'New Alice' }
-			);
+			const user = await User.findOrCreate({ email: 'alice@example.com' }, { name: 'New Alice' });
 
 			expect(user.name).toBe('Alice'); // Original, not 'New Alice'
 

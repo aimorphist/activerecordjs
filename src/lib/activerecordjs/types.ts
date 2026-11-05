@@ -23,20 +23,38 @@ export interface LifecycleHooks<T> {
 }
 
 // Association configuration types
-export type ModelThunk = () => any;  // Returns a Model class
+export type ModelThunk = () => any; // Returns a Model class
 
 export interface BelongsToConfig {
 	model: ModelThunk;
-	foreignKey?: string;  // Optional, inferred from association name
+	foreignKey?: string; // Optional, inferred from association name
 }
 
 export interface HasManyConfig {
 	model: ModelThunk;
-	foreignKey?: string;  // Optional, inferred from parent model name
+	foreignKey?: string; // Optional, inferred from parent model name
+	through?: string; // Name of intermediary hasMany association
+	dependent?: 'destroy' | 'nullify' | 'restrict'; // Phase 5
+}
+
+export interface HasOneConfig {
+	model: ModelThunk;
+	foreignKey?: string; // Optional, inferred from parent model name (like hasMany)
+	dependent?: 'destroy' | 'nullify' | 'restrict'; // Phase 5, but declare type now
 }
 
 export type BelongsToDeclarations = Record<string, BelongsToConfig>;
 export type HasManyDeclarations = Record<string, HasManyConfig>;
+export type HasOneDeclarations = Record<string, HasOneConfig>;
+
+export interface HasAndBelongsToManyConfig {
+	model: ModelThunk;
+	joinTable?: string; // Optional, inferred from sorted table names
+	foreignKey?: string; // FK pointing to owner (e.g., 'postId')
+	associationForeignKey?: string; // FK pointing to target (e.g., 'tagId')
+}
+
+export type HABTMDeclarations = Record<string, HasAndBelongsToManyConfig>;
 
 export interface SaveOptions {
 	validate?: boolean;

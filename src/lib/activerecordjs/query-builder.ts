@@ -1,13 +1,15 @@
-import { eq, asc, desc, sql } from 'drizzle-orm';
+import { eq, asc, desc, sql, inArray } from 'drizzle-orm';
 import type { PgTable } from 'drizzle-orm/pg-core';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { getGlobalConnection } from './connection';
+import { eagerLoad } from './eager-loader';
 
 // Use 'any' liberally for metaprogramming per PRD: "TypeScript where helpful, any where necessary"
 
 // Condition types for where clauses
 type WhereCondition =
 	| { type: 'eq'; column: string; value: unknown }
+	| { type: 'in'; column: string; values: unknown[] }
 	| { type: 'raw'; sql: string; params: unknown[] };
 
 type OrderDirection = 'asc' | 'desc';
@@ -18,6 +20,7 @@ interface QueryState {
 	orderConditions: OrderCondition[];
 	limitValue: number | null;
 	offsetValue: number | null;
+	includesAssociations: string[];
 }
 
 export class QueryBuilder<T extends PgTable, Instance> {
@@ -39,7 +42,8 @@ export class QueryBuilder<T extends PgTable, Instance> {
 			whereConditions: state?.whereConditions ?? [],
 			orderConditions: state?.orderConditions ?? [],
 			limitValue: state?.limitValue ?? null,
-			offsetValue: state?.offsetValue ?? null
+			offsetValue: state?.offsetValue ?? null,
+			includesAssociations: state?.includesAssociations ?? []
 		};
 	}
 
@@ -73,6 +77,24 @@ export class QueryBuilder<T extends PgTable, Instance> {
 		return this.clone({ whereConditions: newConditions });
 	}
 
+	whereIn(column: string, values: unknown[]): QueryBuilder<T, Instance> {
+		if (values.length === 0) {
+			// Empty IN always returns nothing - use a raw condition that is always false
+			return this.clone({
+				whereConditions: [...this.state.whereConditions, { type: 'raw', sql: '1 = 0', params: [] }]
+			});
+		}
+		return this.clone({
+			whereConditions: [...this.state.whereConditions, { type: 'in', column, values }]
+		});
+	}
+
+	includes(...associations: string[]): QueryBuilder<T, Instance> {
+		return this.clone({
+			includesAssociations: [...this.state.includesAssociations, ...associations]
+		});
+	}
+
 	order(column: string, direction: OrderDirection = 'asc'): QueryBuilder<T, Instance> {
 		return this.clone({
 			orderConditions: [...this.state.orderConditions, { column, direction }]
@@ -95,6 +117,8 @@ export class QueryBuilder<T extends PgTable, Instance> {
 		for (const condition of this.state.whereConditions) {
 			if (condition.type === 'eq') {
 				query = query.where(eq((this.table as any)[condition.column], condition.value));
+			} else if (condition.type === 'in') {
+				query = query.where(inArray((this.table as any)[condition.column], condition.values));
 			} else if (condition.type === 'raw') {
 				// Parse raw SQL with ? placeholders - convert to template literal
 				query = query.where(sql.raw(this.interpolateParams(condition.sql, condition.params)));
@@ -142,7 +166,14 @@ export class QueryBuilder<T extends PgTable, Instance> {
 	async all(): Promise<Instance[]> {
 		const db = getGlobalConnection();
 		const results = await this.buildQuery(db);
-		return results.map((r: any) => this.createInstance(r, true));
+		const instances = results.map((r: any) => this.createInstance(r, true));
+
+		// Eager load if includes were specified
+		if (this.state.includesAssociations.length > 0) {
+			await eagerLoad(instances, this.state.includesAssociations, this.modelClass);
+		}
+
+		return instances;
 	}
 
 	async first(): Promise<Instance | null> {
@@ -176,6 +207,8 @@ export class QueryBuilder<T extends PgTable, Instance> {
 		for (const condition of this.state.whereConditions) {
 			if (condition.type === 'eq') {
 				query = query.where(eq((this.table as any)[condition.column], condition.value));
+			} else if (condition.type === 'in') {
+				query = query.where(inArray((this.table as any)[condition.column], condition.values));
 			} else if (condition.type === 'raw') {
 				query = query.where(sql.raw(this.interpolateParams(condition.sql, condition.params)));
 			}

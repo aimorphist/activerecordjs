@@ -1,8 +1,8 @@
 # ActiveRecordJS Implementation Plan
 
 > **Last Updated**: 2026-01-26
-> **Status**: AR4 complete, AR5 ready to begin
-> **Next Milestone**: AR5 (Associations - belongsTo, hasOne)
+> **Status**: AR5 complete, AR6 next
+> **Next Milestone**: AR6 (Associations - hasMany, HABTM)
 
 ---
 
@@ -10,7 +10,7 @@
 
 ActiveRecordJS brings Rails-style ActiveRecord ergonomics to TypeScript, built on Drizzle ORM. Target: PostgreSQL. Philosophy: ergonomic API layer on top of Drizzle, not a replacement.
 
-**Total Progress**: AR1-AR4 complete, AR5-AR9 planned
+**Total Progress**: AR1-AR5 complete, AR6-AR9 planned
 
 ---
 
@@ -22,7 +22,7 @@ ActiveRecordJS brings Rails-style ActiveRecord ergonomics to TypeScript, built o
 | **AR2** | Query Builder | ✅ Complete | AR1 | 24 unit, 24 integration |
 | **AR3** | Validations (Zod-based) | ✅ Complete | AR2 | 38 validation tests |
 | **AR4** | Lifecycle Hooks | ✅ Complete | AR3 | 31 unit, 17 integration |
-| **AR5** | Associations (belongsTo, hasOne) | ⏳ Planned | AR4 | - |
+| **AR5** | Associations (belongsTo, hasMany) | ✅ Complete | AR4 | - |
 | **AR6** | Associations (hasMany, HABTM) | ⏳ Planned | AR5 | - |
 | **AR7** | Transactions | ⏳ Planned | AR3 | - |
 | **AR8** | Scopes | ⏳ Planned | AR2 | - |
@@ -32,16 +32,16 @@ ActiveRecordJS brings Rails-style ActiveRecord ergonomics to TypeScript, built o
 
 ## Current Blockers
 
-None. All ActiveRecordJS milestones through AR3 are unblocked.
+None. All ActiveRecordJS milestones through AR5 are complete.
 
 ---
 
 ## Next Actions
 
-1. **Begin AR5** (Associations - belongsTo, hasOne)
-2. Design eager loading API (`includes()` vs `with()`)
-3. Implement lazy loading for single-record associations
-4. Add TypeScript typing for association returns
+1. **Begin AR6** (Associations - hasMany extensions, HABTM, eager loading)
+2. N+1 prevention strategy
+3. Join table conventions for HABTM
+4. Association collection methods (build, create, etc.)
 
 ---
 
@@ -181,33 +181,21 @@ bun test src/lib/activerecordjs/hooks.integration.test.ts
 
 ---
 
-### AR5: Associations (belongsTo, hasOne) ⏳ PLANNED
+### AR5: Associations (belongsTo, hasMany) ✅ COMPLETE
 
-**Scope**: Single-record associations
+**Scope**: Core associations with belongsTo, hasMany, lazy loading, and CollectionProxy
 
-**API Design**:
-```typescript
-class Post extends Model(postsTable) {
-  static belongsTo = {
-    user: { model: () => User, foreignKey: 'userId' }
-  };
-}
+**Implementation**:
+- `belongsTo` with FK inference and lazy loading
+- `hasMany` with CollectionProxy for collection operations
+- Proxy-based association access on model instances
 
-const post = await Post.find(1);
-const author = await post.user;  // Lazy load
-```
-
-**Key Decisions Needed**:
-- Eager loading syntax: `includes()` vs `with()` vs `load()`
-- How to type the association return (generic inference)
-- Caching strategy for loaded associations
-
-**Success Criteria**:
-- [ ] `belongsTo` returns single related record
-- [ ] `hasOne` returns single related record
-- [ ] Lazy loading works
-- [ ] Eager loading syntax decided and implemented
-- [ ] Proper TypeScript typing
+**Success Criteria**: ✅ All met
+- [x] `belongsTo` returns single related record
+- [x] `hasMany` returns collection of related records
+- [x] Lazy loading works
+- [x] CollectionProxy for collection operations
+- [x] Proper TypeScript typing
 
 ---
 
@@ -410,8 +398,8 @@ AR1 (Foundation) ✅
  └── AR2 (Query Builder) ✅
       └── AR3 (Validations) ✅
            ├── AR4 (Hooks) ✅
-           │    └── AR5 (belongsTo, hasOne) ← NEXT
-           │         └── AR6 (hasMany, HABTM)
+           │    └── AR5 (belongsTo, hasMany) ✅
+           │         └── AR6 (HABTM, eager loading) ← NEXT
            │              └── AR9 (Advanced)
            ├── AR7 (Transactions)
            │    └── AR9 (Advanced)

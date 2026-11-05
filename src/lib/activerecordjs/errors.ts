@@ -40,3 +40,12 @@ export class ValidationError extends ActiveRecordJSError {
 		);
 	}
 }
+
+export class DependentRestrictError extends ActiveRecordJSError {
+	constructor(modelName: string, associationName: string) {
+		super(
+			`Cannot destroy ${modelName}: dependent '${associationName}' records exist (restrict)`
+		);
+		this.name = 'DependentRestrictError';
+	}
+}

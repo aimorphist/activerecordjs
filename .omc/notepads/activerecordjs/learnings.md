@@ -121,3 +121,47 @@ if (!result.success) {
 ```
 
 Custom validators throw `ValidationError` which gets merged into the errors object.
+
+## Phase 5: Dependent Option Implementation (2026-01-27)
+
+### What Was Built
+- Added `dependent: 'destroy' | 'nullify' | 'restrict'` option to hasMany and hasOne associations
+- Implemented three-pass processing strategy in `processDependentAssociations()`:
+  1. Restrict checks (fail fast)
+  2. Destroy cascades (recursive)
+  3. Nullify updates (batch SQL)
+- Created `DependentRestrictError` for constraint violations
+- Integrated into Model.destroy() lifecycle after beforeDestroy hooks
+
+### Key Patterns
+- **Fail Fast**: Restrict checks happen FIRST before any mutations
+- **Recursive Destroy**: Each child's destroy() is called, triggering their own dependent processing
+- **Batch Nullify**: Uses raw SQL UPDATE for efficiency
+- **Transaction Safety**: All dependent operations happen in same transaction as owner delete
+
+### Testing Approach
+- Created separate test model classes with specific dependent configurations
+- Cannot dynamically modify Model static properties at runtime
+- Used inheritance from Model(table) to create variants with different associations
+- Transaction rollback means failed FK violations can't be verified post-failure
+
+### Gotchas
+- Comment schema uses `body` field, not `content`
+- FK constraint errors abort transactions, preventing subsequent queries
+- Test error messages are wrapped and don't always expose underlying DB errors
+- Default User model has no dependent options, causing FK violations on destroy
+
+### Files Modified
+- `/Users/dukejones/work/Morphist/bagpipe/src/lib/activerecordjs/errors.ts` - Added DependentRestrictError
+- `/Users/dukejones/work/Morphist/bagpipe/src/lib/activerecordjs/associations.ts` - Added processDependentAssociations
+- `/Users/dukejones/work/Morphist/bagpipe/src/lib/activerecordjs/model.ts` - Hooked into destroy()
+- `/Users/dukejones/work/Morphist/bagpipe/src/lib/activerecordjs/dependent.integration.test.ts` - Complete test coverage
+
+### Test Results
+All 10 tests pass:
+- dependent: destroy (hasMany, hasOne, recursive)
+- dependent: nullify (hasMany, hasOne)
+- dependent: restrict (with/without children, fail fast)
+- no dependent option (FK violation)
+- lifecycle hooks (still fire correctly)
+

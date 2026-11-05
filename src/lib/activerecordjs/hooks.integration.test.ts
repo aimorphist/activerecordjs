@@ -81,10 +81,26 @@ describe('Hooks Integration Tests', () => {
 			const hookOrder: string[] = [];
 
 			class User extends Model(usersTable) {
-				static beforeSave = [(user: any) => { hookOrder.push('beforeSave'); }];
-				static beforeCreate = [(user: any) => { hookOrder.push('beforeCreate'); }];
-				static afterCreate = [(user: any) => { hookOrder.push('afterCreate'); }];
-				static afterSave = [(user: any) => { hookOrder.push('afterSave'); }];
+				static beforeSave = [
+					(user: any) => {
+						hookOrder.push('beforeSave');
+					}
+				];
+				static beforeCreate = [
+					(user: any) => {
+						hookOrder.push('beforeCreate');
+					}
+				];
+				static afterCreate = [
+					(user: any) => {
+						hookOrder.push('afterCreate');
+					}
+				];
+				static afterSave = [
+					(user: any) => {
+						hookOrder.push('afterSave');
+					}
+				];
 			}
 
 			await User.create({ email: 'test@example.com' });
@@ -97,10 +113,26 @@ describe('Hooks Integration Tests', () => {
 			const hookOrder: string[] = [];
 
 			class User extends Model(usersTable) {
-				static beforeSave = [(user: any) => { hookOrder.push('beforeSave'); }];
-				static beforeUpdate = [(user: any) => { hookOrder.push('beforeUpdate'); }];
-				static afterUpdate = [(user: any) => { hookOrder.push('afterUpdate'); }];
-				static afterSave = [(user: any) => { hookOrder.push('afterSave'); }];
+				static beforeSave = [
+					(user: any) => {
+						hookOrder.push('beforeSave');
+					}
+				];
+				static beforeUpdate = [
+					(user: any) => {
+						hookOrder.push('beforeUpdate');
+					}
+				];
+				static afterUpdate = [
+					(user: any) => {
+						hookOrder.push('afterUpdate');
+					}
+				];
+				static afterSave = [
+					(user: any) => {
+						hookOrder.push('afterSave');
+					}
+				];
 			}
 
 			const user = await User.create({ email: 'test@example.com' });
@@ -284,8 +316,16 @@ describe('Hooks Integration Tests', () => {
 			const updateHooks: string[] = [];
 
 			class User extends Model(usersTable) {
-				static beforeCreate = [(user: any) => { createHooks.push('beforeCreate'); }];
-				static beforeUpdate = [(user: any) => { updateHooks.push('beforeUpdate'); }];
+				static beforeCreate = [
+					(user: any) => {
+						createHooks.push('beforeCreate');
+					}
+				];
+				static beforeUpdate = [
+					(user: any) => {
+						updateHooks.push('beforeUpdate');
+					}
+				];
 			}
 
 			const user = await User.create({ email: 'test@example.com' });
@@ -350,8 +390,16 @@ describe('Hooks Integration Tests', () => {
 			const hookOrder: string[] = [];
 
 			class User extends Model(usersTable) {
-				static beforeSave = [(user: any) => { hookOrder.push('beforeSave'); }];
-				static beforeCreate = [(user: any) => { hookOrder.push('beforeCreate'); }];
+				static beforeSave = [
+					(user: any) => {
+						hookOrder.push('beforeSave');
+					}
+				];
+				static beforeCreate = [
+					(user: any) => {
+						hookOrder.push('beforeCreate');
+					}
+				];
 			}
 
 			const user = User.build({ email: 'test@example.com' });
@@ -365,8 +413,16 @@ describe('Hooks Integration Tests', () => {
 			const hookOrder: string[] = [];
 
 			class User extends Model(usersTable) {
-				static beforeUpdate = [(user: any) => { hookOrder.push('beforeUpdate'); }];
-				static afterUpdate = [(user: any) => { hookOrder.push('afterUpdate'); }];
+				static beforeUpdate = [
+					(user: any) => {
+						hookOrder.push('beforeUpdate');
+					}
+				];
+				static afterUpdate = [
+					(user: any) => {
+						hookOrder.push('afterUpdate');
+					}
+				];
 			}
 
 			const created = await User.create({ email: 'test@example.com' });

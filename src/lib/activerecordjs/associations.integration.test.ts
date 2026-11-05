@@ -1,60 +1,27 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'bun:test';
-import { createConnection, setGlobalConnection } from './connection';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
+import {
+	setupTestDb,
+	teardownTestDb,
+	beginTestTransaction,
+	rollbackTestTransaction
+} from './setup.integration';
 import { User, Post, Comment } from './fixtures/models';
-import { usersTable, postsTable, commentsTable } from './fixtures/schema';
-import { sql } from 'drizzle-orm';
 
 describe('AR5: Associations Integration Tests', () => {
-	let db: ReturnType<typeof createConnection>;
-
 	beforeAll(async () => {
-		db = createConnection(process.env.DATABASE_URL!);
-		setGlobalConnection(db);
+		await setupTestDb();
 	});
 
 	afterAll(async () => {
-		await db.execute(sql`DROP TABLE IF EXISTS comments CASCADE`);
-		await db.execute(sql`DROP TABLE IF EXISTS posts CASCADE`);
-		await db.execute(sql`DROP TABLE IF EXISTS users CASCADE`);
+		await teardownTestDb();
 	});
 
 	beforeEach(async () => {
-		// Clean up and recreate tables
-		await db.execute(sql`DROP TABLE IF EXISTS comments CASCADE`);
-		await db.execute(sql`DROP TABLE IF EXISTS posts CASCADE`);
-		await db.execute(sql`DROP TABLE IF EXISTS users CASCADE`);
+		await beginTestTransaction();
+	});
 
-		await db.execute(sql`
-			CREATE TABLE IF NOT EXISTS users (
-				id SERIAL PRIMARY KEY,
-				name TEXT,
-				email TEXT NOT NULL,
-				created_at TIMESTAMP DEFAULT NOW(),
-				updated_at TIMESTAMP DEFAULT NOW()
-			)
-		`);
-
-		await db.execute(sql`
-			CREATE TABLE IF NOT EXISTS posts (
-				id SERIAL PRIMARY KEY,
-				title TEXT NOT NULL,
-				body TEXT,
-				user_id INTEGER REFERENCES users(id),
-				created_at TIMESTAMP DEFAULT NOW(),
-				updated_at TIMESTAMP DEFAULT NOW()
-			)
-		`);
-
-		await db.execute(sql`
-			CREATE TABLE IF NOT EXISTS comments (
-				id SERIAL PRIMARY KEY,
-				body TEXT NOT NULL,
-				post_id INTEGER REFERENCES posts(id),
-				user_id INTEGER REFERENCES users(id),
-				created_at TIMESTAMP DEFAULT NOW(),
-				updated_at TIMESTAMP DEFAULT NOW()
-			)
-		`);
+	afterEach(async () => {
+		await rollbackTestTransaction();
 	});
 
 	describe('belongsTo', () => {

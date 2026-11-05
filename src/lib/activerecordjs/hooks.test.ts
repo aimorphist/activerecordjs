@@ -424,10 +424,26 @@ describe('ActiveRecordJS Hooks', () => {
 			const order: string[] = [];
 
 			class UserWithHook extends Model(usersTable) {
-				static beforeSave: HookFunction[] = [() => { order.push('beforeSave'); }];
-				static beforeCreate: HookFunction[] = [() => { order.push('beforeCreate'); }];
-				static afterCreate: HookFunction[] = [() => { order.push('afterCreate'); }];
-				static afterSave: HookFunction[] = [() => { order.push('afterSave'); }];
+				static beforeSave: HookFunction[] = [
+					() => {
+						order.push('beforeSave');
+					}
+				];
+				static beforeCreate: HookFunction[] = [
+					() => {
+						order.push('beforeCreate');
+					}
+				];
+				static afterCreate: HookFunction[] = [
+					() => {
+						order.push('afterCreate');
+					}
+				];
+				static afterSave: HookFunction[] = [
+					() => {
+						order.push('afterSave');
+					}
+				];
 			}
 
 			db._setResults([{ id: 1, name: 'Duke', email: 'duke@example.com' }]);
@@ -443,10 +459,26 @@ describe('ActiveRecordJS Hooks', () => {
 			const order: string[] = [];
 
 			class UserWithHook extends Model(usersTable) {
-				static beforeSave: HookFunction[] = [() => { order.push('beforeSave'); }];
-				static beforeUpdate: HookFunction[] = [() => { order.push('beforeUpdate'); }];
-				static afterUpdate: HookFunction[] = [() => { order.push('afterUpdate'); }];
-				static afterSave: HookFunction[] = [() => { order.push('afterSave'); }];
+				static beforeSave: HookFunction[] = [
+					() => {
+						order.push('beforeSave');
+					}
+				];
+				static beforeUpdate: HookFunction[] = [
+					() => {
+						order.push('beforeUpdate');
+					}
+				];
+				static afterUpdate: HookFunction[] = [
+					() => {
+						order.push('afterUpdate');
+					}
+				];
+				static afterSave: HookFunction[] = [
+					() => {
+						order.push('afterSave');
+					}
+				];
 			}
 
 			// Setup existing record
@@ -466,12 +498,36 @@ describe('ActiveRecordJS Hooks', () => {
 			const order: string[] = [];
 
 			class UserWithHook extends Model(usersTable) {
-				static beforeSave: HookFunction[] = [() => { order.push('beforeSave'); }];
-				static beforeCreate: HookFunction[] = [() => { order.push('beforeCreate'); }];
-				static beforeUpdate: HookFunction[] = [() => { order.push('beforeUpdate'); }];
-				static afterCreate: HookFunction[] = [() => { order.push('afterCreate'); }];
-				static afterUpdate: HookFunction[] = [() => { order.push('afterUpdate'); }];
-				static afterSave: HookFunction[] = [() => { order.push('afterSave'); }];
+				static beforeSave: HookFunction[] = [
+					() => {
+						order.push('beforeSave');
+					}
+				];
+				static beforeCreate: HookFunction[] = [
+					() => {
+						order.push('beforeCreate');
+					}
+				];
+				static beforeUpdate: HookFunction[] = [
+					() => {
+						order.push('beforeUpdate');
+					}
+				];
+				static afterCreate: HookFunction[] = [
+					() => {
+						order.push('afterCreate');
+					}
+				];
+				static afterUpdate: HookFunction[] = [
+					() => {
+						order.push('afterUpdate');
+					}
+				];
+				static afterSave: HookFunction[] = [
+					() => {
+						order.push('afterSave');
+					}
+				];
 			}
 
 			db._setResults([{ id: 1, name: 'Duke', email: 'duke@example.com' }]);
@@ -488,12 +544,36 @@ describe('ActiveRecordJS Hooks', () => {
 			const order: string[] = [];
 
 			class UserWithHook extends Model(usersTable) {
-				static beforeSave: HookFunction[] = [() => { order.push('beforeSave'); }];
-				static beforeCreate: HookFunction[] = [() => { order.push('beforeCreate'); }];
-				static beforeUpdate: HookFunction[] = [() => { order.push('beforeUpdate'); }];
-				static afterCreate: HookFunction[] = [() => { order.push('afterCreate'); }];
-				static afterUpdate: HookFunction[] = [() => { order.push('afterUpdate'); }];
-				static afterSave: HookFunction[] = [() => { order.push('afterSave'); }];
+				static beforeSave: HookFunction[] = [
+					() => {
+						order.push('beforeSave');
+					}
+				];
+				static beforeCreate: HookFunction[] = [
+					() => {
+						order.push('beforeCreate');
+					}
+				];
+				static beforeUpdate: HookFunction[] = [
+					() => {
+						order.push('beforeUpdate');
+					}
+				];
+				static afterCreate: HookFunction[] = [
+					() => {
+						order.push('afterCreate');
+					}
+				];
+				static afterUpdate: HookFunction[] = [
+					() => {
+						order.push('afterUpdate');
+					}
+				];
+				static afterSave: HookFunction[] = [
+					() => {
+						order.push('afterSave');
+					}
+				];
 			}
 
 			// Setup existing record

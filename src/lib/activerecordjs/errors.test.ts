@@ -65,7 +65,11 @@ describe('ValidationError', () => {
 			name: ['is required', 'is too short']
 		});
 
-		expect(error.fullMessages).toEqual(['email is invalid', 'name is required', 'name is too short']);
+		expect(error.fullMessages).toEqual([
+			'email is invalid',
+			'name is required',
+			'name is too short'
+		]);
 	});
 
 	it('is instanceof ActiveRecordJSError', () => {

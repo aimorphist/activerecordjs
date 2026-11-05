@@ -5,8 +5,9 @@ import { z, ZodSchema } from 'zod';
 import { getGlobalConnection, setGlobalConnection } from './connection';
 import { RecordNotFoundError, ValidationError } from './errors';
 import { QueryBuilder } from './query-builder';
-import { loadBelongsTo } from './associations';
+import { loadBelongsTo, loadHasOne, processDependentAssociations } from './associations';
 import { CollectionProxy } from './collection-proxy';
+import { HABTMCollectionProxy } from './habtm-collection-proxy';
 
 // Validation types
 type CustomValidator<T> = (instance: T) => void | Promise<void>;
@@ -55,7 +56,10 @@ function detectConventions<T extends PgTable>(table: T) {
 }
 
 // Helper function to run hooks sequentially
-async function runHooks(hooks: Array<(instance: any) => void | Promise<void>>, instance: any): Promise<void> {
+async function runHooks(
+	hooks: Array<(instance: any) => void | Promise<void>>,
+	instance: any
+): Promise<void> {
 	for (const hook of hooks) {
 		await hook(instance);
 	}
@@ -79,7 +83,7 @@ type ModelStatic = {
 	afterUpdate: HookFunction[];
 	beforeDestroy: HookFunction[];
 	afterDestroy: HookFunction[];
-	new(attrs?: Record<string, unknown>, persisted?: boolean): any;
+	new (attrs?: Record<string, unknown>, persisted?: boolean): any;
 };
 
 export function Model<T extends PgTable>(table: T) {
@@ -118,6 +122,9 @@ export function Model<T extends PgTable>(table: T) {
 		// Association declarations (AR5)
 		static belongsTo: Record<string, any> = {};
 		static hasMany: Record<string, any> = {};
+		// AR6: hasOne and HABTM associations
+		static hasOne: Record<string, any> = {};
+		static hasAndBelongsToMany: Record<string, any> = {};
 
 		constructor(attrs: Record<string, unknown> = {}, persisted = false) {
 			this._data = { ...attrs };
@@ -125,10 +132,15 @@ export function Model<T extends PgTable>(table: T) {
 
 			// Return Proxy for dynamic attribute access
 			return new Proxy(this, {
-				get(target, prop: string) {
+				get(target, prop: string | symbol) {
 					// Instance properties and methods first
-					if (prop in target || prop.startsWith('_')) {
+					if (prop in target || (typeof prop === 'string' && prop.startsWith('_'))) {
 						return (target as any)[prop];
+					}
+
+					// Only process string props for associations and data
+					if (typeof prop !== 'string') {
+						return undefined;
 					}
 
 					// Check for belongsTo association
@@ -138,11 +150,23 @@ export function Model<T extends PgTable>(table: T) {
 						if (prop in target._associations) {
 							return Promise.resolve(target._associations[prop]);
 						}
-						return loadBelongsTo(target, prop, ModelClass.belongsTo[prop])
-							.then((result: any) => {
+						return loadBelongsTo(target, prop, ModelClass.belongsTo[prop]).then((result: any) => {
+							target._associations[prop] = result;
+							return result;
+						});
+					}
+
+					// Check for hasOne association
+					if (ModelClass.hasOne && prop in ModelClass.hasOne) {
+						if (prop in target._associations) {
+							return Promise.resolve(target._associations[prop]);
+						}
+						return loadHasOne(target, prop, ModelClass.hasOne[prop], ModelClass.modelName).then(
+							(result: any) => {
 								target._associations[prop] = result;
 								return result;
-							});
+							}
+						);
 					}
 
 					// Check for hasMany association
@@ -153,17 +177,27 @@ export function Model<T extends PgTable>(table: T) {
 							target,
 							prop,
 							ModelClass.hasMany[prop],
-							ModelClass.modelName  // Model name (e.g., 'User'), not table name (e.g., 'users')
+							ModelClass.modelName // Model name (e.g., 'User'), not table name (e.g., 'users')
+						);
+					}
+
+					// Check for hasAndBelongsToMany association
+					if (ModelClass.hasAndBelongsToMany && prop in ModelClass.hasAndBelongsToMany) {
+						return new HABTMCollectionProxy(
+							target,
+							prop,
+							ModelClass.hasAndBelongsToMany[prop],
+							ModelClass
 						);
 					}
 
 					// Then check data
 					return target._data[prop];
 				},
-				set(target, prop: string, value) {
-					if (prop.startsWith('_')) {
+				set(target, prop: string | symbol, value) {
+					if (typeof prop === 'string' && prop.startsWith('_')) {
 						(target as any)[prop] = value;
-					} else {
+					} else if (typeof prop === 'string') {
 						target._data[prop] = value;
 					}
 					return true;
@@ -315,6 +349,9 @@ export function Model<T extends PgTable>(table: T) {
 
 			// Run beforeDestroy hooks
 			await runHooks(ModelClass.beforeDestroy, this);
+
+			// Process dependent associations (restrict/destroy/nullify)
+			await processDependentAssociations(this);
 
 			await (db as any)
 				.delete(ModelClass.table)
@@ -513,6 +550,16 @@ export function Model<T extends PgTable>(table: T) {
 				this
 			);
 			return builder.offset(n);
+		}
+
+		static includes(...associations: string[]): QueryBuilder<T, InstanceType<typeof this>> {
+			const ModelClass = this;
+			const builder = new QueryBuilder<T, InstanceType<typeof this>>(
+				this.table,
+				(data, persisted) => new ModelClass(data, persisted) as InstanceType<typeof this>,
+				this
+			);
+			return builder.includes(...associations);
 		}
 
 		static async count(): Promise<number> {
