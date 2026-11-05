@@ -369,7 +369,7 @@ await User.active.recent.all();
 ## Non-Goals (For Now)
 
 - **Migrations** - Use Drizzle's migration system
-- **Connection pooling** - Drizzle handles this
+- **Connection pooling** - Drizzle handles this for networked Postgres. PGlite is one session; the lease in front of it is specified in [docs/plans/2026-11-05-pglite-adapter.md](plans/2026-11-05-pglite-adapter.md)
 - **Multi-database** - Single database assumed
 - **Query caching** - Out of scope
 - **Polymorphic associations** - Maybe later
