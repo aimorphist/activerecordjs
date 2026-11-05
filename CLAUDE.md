@@ -75,3 +75,10 @@ _Add a brief overview of your project architecture_
 ## Conventions & Patterns
 
 _Add your project-specific conventions here_
+
+## Intention
+
+Work loop: intend → steer → change → advise → act → fold.
+Tracker is beads (`bd`; DAG nodes are `--type node`). Living specs are
+`openspec/specs/`; in-flight work is `openspec/changes/`. Read
+[`openspec/AGENTS.md`](openspec/AGENTS.md) before changing behavior.

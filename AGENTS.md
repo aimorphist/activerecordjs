@@ -126,3 +126,10 @@ bd prime                # Refresh Beads context
 
 **Architecture in one line:** issues live in a local Dolt DB; sync uses `refs/dolt/data` on your git remote; `.beads/issues.jsonl` is a passive export. See https://github.com/gastownhall/beads/blob/main/docs/core-concepts/sync-concepts.md for details and anti-patterns.
 <!-- END BEADS CODEX SETUP -->
+
+## Intention
+
+Work loop: intend → steer → change → advise → act → fold.
+Tracker is beads (`bd`; DAG nodes are `--type node`). Living specs are
+`openspec/specs/`; in-flight work is `openspec/changes/`. Read
+[`openspec/AGENTS.md`](openspec/AGENTS.md) before changing behavior.
