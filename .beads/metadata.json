@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "activerecordjs",
+  "project_id": "c5e40edc-0b1f-4483-b39e-d2e1936e8253"
+}
