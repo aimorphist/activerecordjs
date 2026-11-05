@@ -9,7 +9,7 @@ import { sql } from 'drizzle-orm';
 const connectionString =
 	process.env.TEST_DATABASE_URL ||
 	process.env.DATABASE_URL ||
-	'postgresql://localhost:5432/bagpipe_test';
+	'postgresql://activerecordjs:activerecordjs@localhost:5433/activerecordjs_test';
 
 export async function setup() {
 	const client = postgres(connectionString);

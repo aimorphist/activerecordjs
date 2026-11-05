@@ -1,4 +1,4 @@
-# Bagpipe ORM: Product Requirements Document
+# ActiveRecordJS: Product Requirements Document
 
 > ActiveRecord ergonomics for TypeScript, built on Drizzle.
 
@@ -6,7 +6,7 @@
 
 The JavaScript ORM landscape is fragmented and frustrating. Coming from Rails, ActiveRecord was a thing of beauty - it made relational databases a joy to use. Everything else feels like manual SQL scattered through your code.
 
-**Bagpipe** brings Rails-style developer ergonomics to TypeScript:
+**ActiveRecordJS** brings Rails-style developer ergonomics to TypeScript:
 
 - Convention over configuration
 - Sensible defaults that just work
@@ -71,7 +71,7 @@ export const posts = pgTable('posts', {
 
 ```typescript
 // models/user.ts - The ActiveRecord layer
-import { Model } from 'bagpipe';
+import { Model } from 'activerecordjs';
 import { users } from '../schema';
 import { z } from 'zod';
 
@@ -380,10 +380,10 @@ await User.active.recent.all();
 
 ### Drizzle Integration
 
-Bagpipe wraps Drizzle tables, doesn't replace them:
+ActiveRecordJS wraps Drizzle tables, doesn't replace them:
 
 ```typescript
-// Bagpipe model wraps Drizzle table
+// Model wraps a Drizzle table
 class User extends Model(users) { ... }
 
 // Internally uses Drizzle for all queries
@@ -401,14 +401,14 @@ class User extends Model(users) { ... }
 ### Connection Management
 
 ```typescript
-import { createBagpipe } from 'bagpipe';
-import { drizzle } from 'drizzle-orm/...';
+import { createActiveRecordJS } from 'activerecordjs';
+import { drizzle } from 'drizzle-orm/postgres-js';
 
 const db = drizzle(connection);
-const bagpipe = createBagpipe(db);
+const { Model } = createActiveRecordJS(db);
 
 // Models automatically use this connection
-class User extends bagpipe.Model(users) { ... }
+class User extends Model(users) { ... }
 ```
 
 ---

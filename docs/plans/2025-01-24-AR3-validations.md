@@ -2,7 +2,7 @@
 
 ## Overview
 
-Implement Zod-based validation system for Bagpipe ORM, including refactoring the Model factory to support class syntax for better developer ergonomics and future milestone compatibility (hooks, associations, scopes).
+Implement Zod-based validation system for ActiveRecordJS, including refactoring the Model factory to support class syntax for better developer ergonomics and future milestone compatibility (hooks, associations, scopes).
 
 ## Current State Analysis
 
@@ -22,7 +22,7 @@ Implement Zod-based validation system for Bagpipe ORM, including refactoring the
 ## Desired End State
 
 ```typescript
-import { Model, ValidationError } from 'bagpipe';
+import { Model, ValidationError } from 'activerecordjs';
 import { z } from 'zod';
 
 class User extends Model(users) {
@@ -597,7 +597,7 @@ describe('ValidationError', () => {
 - [x] TypeScript compiles: `npm run check` (pre-existing errors in other test files)
 
 #### Manual Verification:
-- [ ] ValidationError can be imported from 'bagpipe' index
+- [ ] ValidationError can be imported from 'activerecordjs' index
 
 ---
 

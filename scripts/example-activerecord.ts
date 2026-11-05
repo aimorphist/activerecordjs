@@ -5,8 +5,8 @@
  */
 
 import { runScript } from './lib/bootstrap';
-import { Model, ValidationError, z } from '../src/lib/activerecordjs';
-import { usersTable, postsTable } from '../src/lib/activerecordjs/fixtures/schema';
+import { Model, ValidationError, z } from '../src';
+import { usersTable, postsTable } from '../src/fixtures/schema';
 
 // --- Define Models with Validations ---
 

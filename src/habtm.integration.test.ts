@@ -204,6 +204,7 @@ describe('AR6 Phase 3: HABTM Integration Tests', () => {
 
 			expect(p1).toBeDefined();
 			expect(p2).toBeDefined();
+			if (!p1 || !p2) throw new Error('expected both posts');
 			expect(p1._associations.tags).toHaveLength(2);
 			expect(p2._associations.tags).toHaveLength(2);
 		});

@@ -82,6 +82,7 @@ describe('AR6 Phase 2: Eager Loading Integration Tests', () => {
 			// Posts should be pre-populated in _associations
 			expect(userA).toBeDefined();
 			expect(userB).toBeDefined();
+			if (!userA || !userB) throw new Error('expected both users');
 			expect(userA._associations.posts).toHaveLength(2);
 			expect(userB._associations.posts).toHaveLength(1);
 		});
@@ -113,6 +114,7 @@ describe('AR6 Phase 2: Eager Loading Integration Tests', () => {
 
 			expect(userA).toBeDefined();
 			expect(userB).toBeDefined();
+			if (!userA || !userB) throw new Error('expected both users');
 			expect(userA._associations.profile).not.toBeNull();
 			expect((userA._associations.profile as any).bio).toBe('Bio A');
 			expect(userB._associations.profile).toBeNull();
@@ -132,6 +134,7 @@ describe('AR6 Phase 2: Eager Loading Integration Tests', () => {
 			}
 			const postWithComment = posts.find((p: any) => p.title === 'Post 2');
 			expect(postWithComment).toBeDefined();
+			if (!postWithComment) throw new Error('expected the commented post');
 			expect(postWithComment._associations.comments).toHaveLength(1);
 		});
 

@@ -6,7 +6,7 @@ import { setGlobalConnection, runWithConnection } from './connection';
 const connectionString =
 	process.env.TEST_DATABASE_URL ||
 	process.env.DATABASE_URL ||
-	'postgresql://localhost:5432/bagpipe_test';
+	'postgresql://activerecordjs:activerecordjs@localhost:5433/activerecordjs_test';
 
 // Shared connection pool (each Vitest worker gets its own instance)
 let pool: ReturnType<typeof postgres> | null = null;

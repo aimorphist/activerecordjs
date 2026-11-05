@@ -16,7 +16,7 @@
 import { config } from 'dotenv';
 import { drizzle, type PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import { setGlobalConnection } from '../../src/lib/activerecordjs';
+import { setGlobalConnection } from '../../src';
 
 // Load environment variables from .env file
 config();
