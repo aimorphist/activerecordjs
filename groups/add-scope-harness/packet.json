@@ -1,0 +1,49 @@
+{
+  "schema_version": "1.0",
+  "id": "pkt-add-scope-harness-act",
+  "node_id": "activerecordjs-3q8.3",
+  "capability": "test-scopes",
+  "change_id": "add-scope-harness",
+  "role": "worker",
+  "surface": "skill-host",
+  "density": "explicit",
+  "rigor": "change",
+  "load_class": "structure-clear",
+  "requester": {
+    "id": "agt-conductor",
+    "kind": "group",
+    "harness": "none",
+    "signing": { "mode": "stand-in", "stand_in_id": "agt-conductor" }
+  },
+  "assignee": {
+    "id": "agt-sonnet-known",
+    "kind": "model",
+    "harness": "claude",
+    "interface": "claude-sonnet-5-5",
+    "signing": { "mode": "stand-in", "stand_in_id": "agt-sonnet-known" }
+  },
+  "goal": "Implement openspec/changes/add-scope-harness. Read proposal.md, design.md, specs/test-scopes/spec.md, and tasks.md. Check a task only when the behavior is in the tree and the acceptance command passes.\n\nPostgres is already listening at localhost:5433 (database activerecordjs_test, user activerecordjs, password activerecordjs). src/setup.integration.ts currently calls setGlobalConnection in setupTestDb, beginTestTransaction, and rollbackTestTransaction. AsyncLocalStorage set in beforeEach does not cover the test body. Use a Vitest fixture that opens one reserved postgres.js connection, enters scope.transaction, installs that callback scope with runWithConnection around the test body, and rolls back when the fixture ends. Do not call setGlobalConnection.\n\nPoint integration tests that call getGlobalConnection, including src/habtm.integration.test.ts, at the fixture scope. Files may still run in parallel. Each test holds its own connection.\n\nDo not edit the PGlite lease or ARCHITECTURE.md. Do not build the Wasmtime process. Edit the owned paths and stop.",
+  "anchors": [
+    {
+      "symbol": "setup.integration.ts",
+      "invariant": "The file does not call setGlobalConnection. Each Postgres test runs inside a rolled-back ConnectionScope on its own connection."
+    }
+  ],
+  "acceptance": {
+    "kind": "command",
+    "command": "bun run test:integration && bun run test:unit && bun run test:pglite"
+  },
+  "out_of_scope": [
+    { "item": "PGlite lease", "tracked_as": "pglite-adapter" },
+    { "item": "Wasmtime process and the reopen spike", "tracked_as": "spike-wasmtime-reopen" }
+  ],
+  "constraints": {
+    "permission": "write",
+    "paths": [
+      "src",
+      "vitest.integration.config.ts",
+      "openspec/changes/add-scope-harness/tasks.md"
+    ],
+    "do_not": ["fold", "push", "deploy", "edit ARCHITECTURE.md", "edit the PGlite lease"]
+  }
+}

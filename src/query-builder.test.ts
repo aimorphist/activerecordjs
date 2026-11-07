@@ -62,7 +62,8 @@ describe('QueryBuilder', () => {
 
 			await User.where({ name: 'Duke' }).where({ email: 'duke@example.com' }).all();
 
-			expect(db._mockQuery.where).toHaveBeenCalledTimes(2);
+			// Drizzle's .where() replaces, so both conditions go in one AND clause.
+			expect(db._mockQuery.where).toHaveBeenCalledTimes(1);
 		});
 
 		it('supports raw SQL conditions', async () => {

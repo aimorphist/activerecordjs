@@ -1,16 +1,13 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
+import { describe, expect } from 'vitest';
 import { z } from 'zod';
-import {
-	setupTestDb,
-	teardownTestDb,
-	beginTestTransaction,
-	rollbackTestTransaction
-} from './setup.integration';
+import { it, useTestScope } from './setup.integration';
 import { Model } from './model';
 import { ValidationError } from './errors';
 import { usersTable } from './fixtures/schema';
 
 describe('Validations Integration Tests', () => {
+	useTestScope();
+
 	class User extends Model(usersTable) {
 		static validations = {
 			email: z.string().email(),
@@ -24,22 +21,6 @@ describe('Validations Integration Tests', () => {
 			]
 		};
 	}
-
-	beforeAll(async () => {
-		await setupTestDb();
-	});
-
-	afterAll(async () => {
-		await teardownTestDb();
-	});
-
-	beforeEach(async () => {
-		await beginTestTransaction();
-	});
-
-	afterEach(async () => {
-		await rollbackTestTransaction();
-	});
 
 	describe('save() with validation', () => {
 		it('rejects invalid record on save', async () => {

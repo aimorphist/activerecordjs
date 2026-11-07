@@ -1,96 +1,60 @@
-import { drizzle, type PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import { sql } from 'drizzle-orm';
-import { setGlobalConnection, runWithConnection } from './node';
+import { test as vitestTest, aroundEach } from 'vitest';
+import { runWithConnection } from './node';
+import type { ConnectionScope } from './session';
+import { scopeFromPostgresClient } from './postgres-js';
 
 const connectionString =
 	process.env.TEST_DATABASE_URL ||
 	process.env.DATABASE_URL ||
 	'postgresql://activerecordjs:activerecordjs@localhost:5433/activerecordjs_test';
 
-// Shared connection pool (each Vitest worker gets its own instance)
-let pool: ReturnType<typeof postgres> | null = null;
-let poolDb: PostgresJsDatabase | null = null;
-
-// Per-test reserved connection (for transaction isolation)
-let reservedConnection: ReturnType<typeof postgres> | null = null;
-let testDb: PostgresJsDatabase | null = null;
+/** Thrown inside the test transaction to force a rollback. Never escapes the fixture. */
+class RollbackTestTransaction extends Error {}
 
 /**
- * Sets up the test database connection for a test file.
- * Tables are created by globalSetup.integration.ts before any tests run.
- * Call this in beforeAll().
+ * Opens a root scope on its own single postgres.js connection, enters its
+ * transaction, and hands the callback scope to `provide`. The transaction is
+ * rolled back, and the connection released, when `provide` returns.
  */
-export async function setupTestDb() {
-	// Create shared pool if not exists (each worker gets its own)
-	if (!pool) {
-		pool = postgres(connectionString, {
-			max: 10, // Pool size for parallel tests
-			idle_timeout: 30
-		});
-		poolDb = drizzle(pool);
-	}
-
-	// Set global connection
-	setGlobalConnection(poolDb!);
-	return poolDb!;
-}
-
-/**
- * Begins a test transaction. Call this in beforeEach().
- * Reserves a dedicated connection from the pool and starts a transaction.
- */
-export async function beginTestTransaction() {
-	// Create a single-connection "pool" for this test to ensure transaction isolation
-	// This reserves a connection that won't be shared with other tests
-	reservedConnection = postgres(connectionString, { max: 1 });
-	testDb = drizzle(reservedConnection);
-
-	// Use runWithConnection so all ORM operations in this async context use testDb
-	// Note: We need to set it globally too for the current synchronous context
-	setGlobalConnection(testDb);
-
-	await testDb.execute(sql`BEGIN`);
-}
-
-/**
- * Rolls back the test transaction. Call this in afterEach().
- * Undoes all database changes and releases the connection.
- */
-export async function rollbackTestTransaction() {
-	if (testDb) {
-		await testDb.execute(sql`ROLLBACK`);
-	}
-	if (reservedConnection) {
-		await reservedConnection.end();
-		reservedConnection = null;
-		testDb = null;
-	}
-	// Restore pool connection as global
-	if (poolDb) {
-		setGlobalConnection(poolDb);
+async function withTestScope(provide: (scope: ConnectionScope) => Promise<void>): Promise<void> {
+	const root = scopeFromPostgresClient(postgres(connectionString, { max: 1 }));
+	try {
+		await root
+			.transaction(async (scope) => {
+				await provide(scope);
+				throw new RollbackTestTransaction();
+			})
+			.catch((error) => {
+				if (!(error instanceof RollbackTestTransaction)) throw error;
+			});
+	} finally {
+		await root.close();
 	}
 }
 
 /**
- * @deprecated Use beginTestTransaction/rollbackTestTransaction instead.
+ * Vitest's `it` extended with a `scope` fixture: one reserved connection and
+ * one open transaction per test, rolled back when the test ends (a throw from
+ * the test is still a rollback). Parallel files and tests each hold their own
+ * connection. This harness never calls setGlobalConnection.
  */
-export async function cleanupTestDb() {
-	const db = testDb || poolDb;
-	if (!db) return;
-	await db.execute(sql`TRUNCATE TABLE posts, users RESTART IDENTITY CASCADE`);
-}
-
-export async function teardownTestDb() {
-	// Clean up this file's test connection if any
-	if (reservedConnection) {
-		await reservedConnection.end();
-		reservedConnection = null;
-		testDb = null;
+export const test = vitestTest.extend<{ scope: ConnectionScope }>({
+	scope: async ({}, use) => {
+		await withTestScope(use);
 	}
-	// Note: Don't close the shared pool - other test files may still use it
-	// Vitest will handle process cleanup
-}
+});
 
-/** Export for backward compatibility */
-export { runWithConnection };
+export const it = test;
+
+/**
+ * Installs the test's scope as the ambient connection for the test body and its
+ * beforeEach/afterEach hooks. A fixture alone cannot do this: the store set
+ * around `use()` does not reach the test function, and `aroundEach` does.
+ * Call once at the top of a suite (or file) that uses the harness `it`.
+ */
+export function useTestScope(): void {
+	aroundEach<{ scope: ConnectionScope }>(async (runTest, { scope }) => {
+		await runWithConnection(scope, runTest);
+	});
+}

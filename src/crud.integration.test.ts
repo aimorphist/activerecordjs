@@ -1,32 +1,16 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
-import {
-	setupTestDb,
-	teardownTestDb,
-	beginTestTransaction,
-	rollbackTestTransaction
-} from './setup.integration';
+import { describe, expect, beforeAll, beforeEach } from 'vitest';
+import { it, useTestScope } from './setup.integration';
 import { Model } from './model';
 import { RecordNotFoundError } from './errors';
 import { usersTable } from './fixtures/schema';
 
 describe('CRUD Integration Tests', () => {
+	useTestScope();
+
 	let User: ReturnType<typeof Model<typeof usersTable>>;
 
 	beforeAll(async () => {
-		await setupTestDb();
 		User = Model(usersTable);
-	});
-
-	afterAll(async () => {
-		await teardownTestDb();
-	});
-
-	beforeEach(async () => {
-		await beginTestTransaction();
-	});
-
-	afterEach(async () => {
-		await rollbackTestTransaction();
 	});
 
 	describe('Create', () => {

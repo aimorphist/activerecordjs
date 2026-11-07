@@ -1,31 +1,10 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
-import {
-	setupTestDb,
-	teardownTestDb,
-	beginTestTransaction,
-	rollbackTestTransaction
-} from './setup.integration';
+import { describe, expect } from 'vitest';
+import { it, useTestScope } from './setup.integration';
 import { Model } from './model';
 import { usersTable } from './fixtures/schema';
 
 describe('Hooks Integration Tests', () => {
-	let db: Awaited<ReturnType<typeof setupTestDb>>;
-
-	beforeAll(async () => {
-		db = await setupTestDb();
-	});
-
-	afterAll(async () => {
-		await teardownTestDb();
-	});
-
-	beforeEach(async () => {
-		await beginTestTransaction();
-	});
-
-	afterEach(async () => {
-		await rollbackTestTransaction();
-	});
+	useTestScope();
 
 	describe('hooks with real database', () => {
 		it('beforeSave modifies data that persists to DB', async () => {

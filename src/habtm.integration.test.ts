@@ -1,39 +1,19 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
-import {
-	setupTestDb,
-	teardownTestDb,
-	beginTestTransaction,
-	rollbackTestTransaction
-} from './setup.integration';
+import { describe, expect } from 'vitest';
+import { it, useTestScope } from './setup.integration';
 import { User, Post, Comment, Profile, Tag } from './fixtures/models';
-import { getGlobalConnection } from './node';
 import { sql } from 'drizzle-orm';
 
 describe('AR6 Phase 3: HABTM Integration Tests', () => {
-	beforeAll(async () => {
-		await setupTestDb();
-	});
-
-	afterAll(async () => {
-		await teardownTestDb();
-	});
-
-	beforeEach(async () => {
-		await beginTestTransaction();
-	});
-
-	afterEach(async () => {
-		await rollbackTestTransaction();
-	});
+	useTestScope();
 
 	describe('HABTM basics', () => {
-		it('loads related records via HABTM', async () => {
+		it('loads related records via HABTM', async ({ scope }) => {
 			const post = await Post.create({ title: 'Test Post' });
 			const tag1 = await Tag.create({ name: 'JavaScript' });
 			const tag2 = await Tag.create({ name: 'TypeScript' });
 
 			// Manually insert join records
-			const db = getGlobalConnection();
+			const db = scope.session();
 			await db.execute(
 				sql`INSERT INTO posts_tags (post_id, tag_id) VALUES (${post.id}, ${tag1.id})`
 			);

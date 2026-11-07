@@ -1,28 +1,9 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
-import {
-	setupTestDb,
-	teardownTestDb,
-	beginTestTransaction,
-	rollbackTestTransaction
-} from './setup.integration';
+import { describe, expect } from 'vitest';
+import { it, useTestScope } from './setup.integration';
 import { User, Post, Comment } from './fixtures/models';
 
 describe('AR6 Phase 6: Extended CollectionProxy Integration Tests', () => {
-	beforeAll(async () => {
-		await setupTestDb();
-	});
-
-	afterAll(async () => {
-		await teardownTestDb();
-	});
-
-	beforeEach(async () => {
-		await beginTestTransaction();
-	});
-
-	afterEach(async () => {
-		await rollbackTestTransaction();
-	});
+	useTestScope();
 
 	describe('CollectionProxy.ids()', () => {
 		it('returns array of IDs for related records', async () => {

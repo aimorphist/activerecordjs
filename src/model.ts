@@ -152,7 +152,7 @@ export function Model<T extends PgTable>(table: T, scope: ConnectionScope | null
 
 			// Return Proxy for dynamic attribute access
 			return new Proxy(this, {
-				get(target, prop: string | symbol) {
+				get(target, prop: string | symbol, receiver) {
 					// Instance properties and methods first
 					if (prop in target || (typeof prop === 'string' && prop.startsWith('_'))) {
 						return (target as any)[prop];
@@ -193,8 +193,10 @@ export function Model<T extends PgTable>(table: T, scope: ConnectionScope | null
 					if (ModelClass.hasMany && prop in ModelClass.hasMany) {
 						// Return a CollectionProxy
 						// CRITICAL: Use ModelClass.modelName (e.g., 'User'), NOT ModelClass.tableName (e.g., 'users')
+						// Owner is the receiver (the proxy) so an inverse belongsTo cached on a
+						// child exposes attribute getters like `.id`, not the raw target.
 						return new CollectionProxy(
-							target,
+							receiver,
 							prop,
 							ModelClass.hasMany[prop],
 							ModelClass.modelName // Model name (e.g., 'User'), not table name (e.g., 'users')

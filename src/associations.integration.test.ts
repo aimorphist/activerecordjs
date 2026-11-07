@@ -1,28 +1,9 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
-import {
-	setupTestDb,
-	teardownTestDb,
-	beginTestTransaction,
-	rollbackTestTransaction
-} from './setup.integration';
+import { describe, expect } from 'vitest';
+import { it, useTestScope } from './setup.integration';
 import { User, Post, Comment } from './fixtures/models';
 
 describe('AR5: Associations Integration Tests', () => {
-	beforeAll(async () => {
-		await setupTestDb();
-	});
-
-	afterAll(async () => {
-		await teardownTestDb();
-	});
-
-	beforeEach(async () => {
-		await beginTestTransaction();
-	});
-
-	afterEach(async () => {
-		await rollbackTestTransaction();
-	});
+	useTestScope();
 
 	describe('belongsTo', () => {
 		it('loads related record via belongsTo', async () => {

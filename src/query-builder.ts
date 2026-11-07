@@ -1,4 +1,4 @@
-import { eq, asc, desc, sql, inArray } from 'drizzle-orm';
+import { and, eq, asc, desc, sql, inArray, type SQL } from 'drizzle-orm';
 import type { PgTable } from 'drizzle-orm/pg-core';
 import { eagerLoad } from './eager-loader';
 import { captureScope, requireScope, type ConnectionScope, type PgSession } from './session';
@@ -121,21 +121,29 @@ export class QueryBuilder<T extends PgTable, Instance> {
 		return this.clone({ offsetValue: n });
 	}
 
+	/** All accumulated where conditions ANDed into one clause, or undefined when there are none. */
+	private whereClause(): SQL | undefined {
+		const clauses: SQL[] = [];
+		for (const condition of this.state.whereConditions) {
+			if (condition.type === 'eq') {
+				clauses.push(eq((this.table as any)[condition.column], condition.value));
+			} else if (condition.type === 'in') {
+				clauses.push(inArray((this.table as any)[condition.column], condition.values));
+			} else if (condition.type === 'raw') {
+				// Parse raw SQL with ? placeholders - convert to template literal
+				clauses.push(sql.raw(this.interpolateParams(condition.sql, condition.params)));
+			}
+		}
+		return clauses.length ? and(...clauses) : undefined;
+	}
+
 	// Build the Drizzle query with all accumulated conditions
 	private buildQuery(db: PgSession) {
 		let query: any = (db as any).select().from(this.table);
 
-		// Apply where conditions
-		for (const condition of this.state.whereConditions) {
-			if (condition.type === 'eq') {
-				query = query.where(eq((this.table as any)[condition.column], condition.value));
-			} else if (condition.type === 'in') {
-				query = query.where(inArray((this.table as any)[condition.column], condition.values));
-			} else if (condition.type === 'raw') {
-				// Parse raw SQL with ? placeholders - convert to template literal
-				query = query.where(sql.raw(this.interpolateParams(condition.sql, condition.params)));
-			}
-		}
+		// Apply where conditions (Drizzle's .where() replaces, so AND them into one)
+		const where = this.whereClause();
+		if (where) query = query.where(where);
 
 		// Apply ordering
 		for (const order of this.state.orderConditions) {
@@ -216,15 +224,8 @@ export class QueryBuilder<T extends PgTable, Instance> {
 		let query: any = (db as any).select({ count: sql`count(*)` }).from(this.table);
 
 		// Apply where conditions only (not order/limit/offset)
-		for (const condition of this.state.whereConditions) {
-			if (condition.type === 'eq') {
-				query = query.where(eq((this.table as any)[condition.column], condition.value));
-			} else if (condition.type === 'in') {
-				query = query.where(inArray((this.table as any)[condition.column], condition.values));
-			} else if (condition.type === 'raw') {
-				query = query.where(sql.raw(this.interpolateParams(condition.sql, condition.params)));
-			}
-		}
+		const where = this.whereClause();
+		if (where) query = query.where(where);
 
 		const [result] = await query;
 		return Number(result?.count ?? 0);

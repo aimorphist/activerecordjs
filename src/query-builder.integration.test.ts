@@ -1,35 +1,22 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
-import {
-	setupTestDb,
-	teardownTestDb,
-	beginTestTransaction,
-	rollbackTestTransaction
-} from './setup.integration';
+import { describe, expect, beforeAll, beforeEach } from 'vitest';
+import { it, useTestScope } from './setup.integration';
 import { Model } from './model';
 import { usersTable } from './fixtures/schema';
 
 describe('QueryBuilder Integration Tests', () => {
+	useTestScope();
+
 	let User: ReturnType<typeof Model<typeof usersTable>>;
 
 	beforeAll(async () => {
-		await setupTestDb();
 		User = Model(usersTable);
 	});
 
-	afterAll(async () => {
-		await teardownTestDb();
-	});
-
 	beforeEach(async () => {
-		await beginTestTransaction();
 		// Seed test data
 		await User.create({ name: 'Alice', email: 'alice@example.com' });
 		await User.create({ name: 'Bob', email: 'bob@example.com' });
 		await User.create({ name: 'Charlie', email: 'charlie@example.com' });
-	});
-
-	afterEach(async () => {
-		await rollbackTestTransaction();
 	});
 
 	describe('where()', () => {
