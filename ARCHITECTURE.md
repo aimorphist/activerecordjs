@@ -2,7 +2,7 @@
 
 ActiveRecordJS keeps one Model API and gains a second database. Networked Postgres stays on `postgres.js`. PGlite is a single Postgres session in WASM. Concurrent callers wait on that one session. They do not each get a database.
 
-The server process, when it exists, is Wasmtime running WASI. That process is not part of the first landing. A spike has to show that one WASI Postgres can run a bound query, roll it back, and still have the committed row after the process starts again.
+The server process is Wasmtime running WASI, in `host/wasmtime/`. The reopen spike went go: one WASI Postgres ran a bound query, rolled a second statement back, and a new process saw only the committed row.
 
 ## Shape
 
@@ -83,17 +83,17 @@ Some `where` values in `query-builder.ts` are interpolated through `sql.raw`. A 
 
 **PGlite on a JS host.** Browser, Node, or Bun. The official `@electric-sql/pglite` client and `drizzle-orm/pglite`. Persistence is memory, IndexedDB, or a directory, matching the host. Tests use memory. One directory reopen check covers Node.
 
-**Wasmtime process.** Not in the first landing. A native host. One database `Store` on one owner thread. Caller threads block on a bounded queue and submit SQL text plus parameters. The only database crossing is that pair, the rows, the error, and the lease token. One preopened data directory. The process does not run on Node.
+**Wasmtime process.** Landed in `host/wasmtime/`. A native C host on the Wasmtime 38.0.3 C API runs the pinned draft WASI Postgres. One database `Store` on one owner thread. Caller threads park on a queue of at most 8, wait at most 5 seconds in it, and submit SQL text plus parameters. The holder of the live token skips that queue but never enters the guest beside another call. The only database crossing is that pair, the rows, the error, and the lease token. One preopened data directory, which must already hold the seeded cluster, guarded by a lock file so a second host cannot open it. The process does not run on Node and has no network listener. `bash host/wasmtime/accept.sh` is its acceptance on arm64 macOS. Linux and power loss are not tested results.
 
 A Node process that embeds Wasmtime only to reach WASM which the official PGlite client already loads is not a runtime we are building.
 
-Whether the ORM itself is inside the WASM guest is decided by the spike. The guest is the ORM only if a host SQL import cannot meet the process shape above.
+The guest is Postgres, not the ORM. The decided shape is a native host, one owner, SQL and parameters across the boundary, and the ORM outside the guest.
 
 ## Spike
 
 `wasmtime-reopen` went go on 2026-11-07. The record is `docs/spikes/wasmtime-reopen/finding.md`.
 
-One native Wasmtime host loaded the draft `pglite-bindings` WASI Postgres (PostgreSQL 16.6), ran one bound-parameter insert, rolled a second insert back, exited, and a second process opened the same directory and saw only the committed row. That is a host SQL boundary. The ORM does not have to enter the guest for this sequence. The draft still stubs overflow and exception handling, and this repository has not been built with ComponentizeJS. The Wasmtime process can now be specified.
+One native Wasmtime host loaded the draft `pglite-bindings` WASI Postgres (PostgreSQL 16.6), ran one bound-parameter insert, rolled a second insert back, exited, and a second process opened the same directory and saw only the committed row. That is a host SQL boundary. The ORM does not have to enter the guest for this sequence. The draft still stubs overflow and exception handling, and this repository has not been built with ComponentizeJS. The process is specified, and the host is `host/wasmtime/`.
 
 ## Out of this shape
 
