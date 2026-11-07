@@ -11,7 +11,7 @@ The reopen spike went go. A native Wasmtime host can run the draft WASI Postgres
 ## What
 
 - Add the `wasmtime-process` capability: a native process that owns one Wasmtime `Store`, one WASI Postgres, and one preopened data directory.
-- Callers submit SQL text and parameters. The holder of the live lease token does not wait behind the next caller. A wait past 5 seconds rolls the open transaction back, and the error names the timeout.
+- Callers use in-process operations: SQL text plus a separate parameter list. Eight waiters may park. The ninth is rejected. A waiter who waits 5 seconds is canceled and does not run. The holder of the live token runs before those waiters and does not enter the guest beside another call. A failed cleanup closes the process to later submissions.
 - Keep Node off the server path. Do not put the ORM in the guest.
 
 ## Impact
