@@ -7,15 +7,18 @@
 	"exports": {
 		".": "./src/index.ts",
 		"./postgres-js": "./src/postgres-js.ts",
-		"./node": "./src/node.ts"
+		"./node": "./src/node.ts",
+		"./pglite": "./src/pglite.ts"
 	},
 	"scripts": {
 		"test": "vitest run",
 		"test:unit": "vitest run",
+		"test:pglite": "PGLITE=1 vitest run",
 		"test:integration": "vitest run --config vitest.integration.config.ts",
 		"example": "bun scripts/example-activerecord.ts"
 	},
 	"dependencies": {
+		"@electric-sql/pglite": "^0.5.15",
 		"dotenv": "^17.2.3",
 		"drizzle-orm": "^0.44.6",
 		"postgres": "^3.4.7",

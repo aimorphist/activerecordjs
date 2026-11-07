@@ -123,11 +123,12 @@ function entryFile(subpath: string): string {
 }
 
 describe('package entries', () => {
-	it('publishes core, postgres-js, and node as separate subpaths', () => {
+	it('publishes core, postgres-js, node, and pglite as separate subpaths', () => {
 		const core = entryFile('.');
 		const pg = entryFile('./postgres-js');
 		const node = entryFile('./node');
-		expect(new Set([core, pg, node]).size).toBe(3);
+		const pglite = entryFile('./pglite');
+		expect(new Set([core, pg, node, pglite]).size).toBe(4);
 	});
 
 	it('core import graph has no node: builtin, no postgres, no @electric-sql/pglite', () => {
@@ -161,6 +162,14 @@ describe('package entries', () => {
 		expect(node.files.has(entryFile('./postgres-js'))).toBe(false);
 		// node entry reaches node:async_hooks but no driver
 		expect(node.offences.filter((o) => o.reason === 'driver package')).toEqual([]);
+	});
+
+	it('the pglite entry reaches the pglite driver and neither the node nor the postgres-js entry', () => {
+		const entry = walk(entryFile('./pglite'));
+		expect(entry.offences.some((o) => o.spec === '@electric-sql/pglite')).toBe(true);
+		expect(entry.offences.some((o) => o.spec === 'postgres')).toBe(false);
+		expect(entry.files.has(entryFile('./node'))).toBe(false);
+		expect(entry.files.has(entryFile('./postgres-js'))).toBe(false);
 	});
 
 	it('each published subpath loads as a module', async () => {

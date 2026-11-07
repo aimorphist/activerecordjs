@@ -1,0 +1,57 @@
+{
+  "schema_version": "1.0",
+  "id": "pkt-add-pglite-adapter-act",
+  "node_id": "activerecordjs-3q8.2",
+  "capability": "pglite-adapter",
+  "change_id": "add-pglite-adapter",
+  "role": "worker",
+  "surface": "skill-host",
+  "density": "explicit",
+  "rigor": "change",
+  "load_class": "structure-clear",
+  "requester": {
+    "id": "agt-conductor",
+    "kind": "group",
+    "harness": "none",
+    "signing": { "mode": "stand-in", "stand_in_id": "agt-conductor" }
+  },
+  "assignee": {
+    "id": "agt-sonnet-known",
+    "kind": "model",
+    "harness": "claude",
+    "interface": "claude-sonnet-5-5",
+    "signing": { "mode": "stand-in", "stand_in_id": "agt-sonnet-known" }
+  },
+  "goal": "Implement openspec/changes/add-pglite-adapter. Read proposal.md, design.md, specs/pglite-adapter/spec.md, and tasks.md. Check a task only when the behavior is in the tree and the acceptance command passes.\n\nThe session boundary is already landed. ConnectionScope.transaction throws when that same root already has a transaction open. PGlite has one session, so openPglite keeps one root scope and queues other callers in front of it. A second transaction waits. Autocommit waits. Work carrying the live LeaseToken does not wait behind the next waiter. Nested transaction still throws. Default wait is 5 seconds, then the open transaction rolls back, the lease is released, and the error names the timeout.\n\nUse the official @electric-sql/pglite client and drizzle-orm/pglite. Add a ./pglite package entry. The core entry must still not import @electric-sql/pglite. No directory means memory. A directory persists. Reject SET, temporary tables, and advisory locks. Allow SET LOCAL while the lease is held.\n\nConfirm whether the PGlite client already serializes statements, and record that next to the lease. The lease remains the transaction owner either way.\n\nAdd a test:pglite script. It covers create, find, update, destroy, rollback, and one association load on memory, plus one directory reopen that shows the committed row and not the rolled-back row. bun run test:unit must still pass.\n\nDo not edit ARCHITECTURE.md. Do not change src/setup.integration.ts off the global swap. Do not build the Wasmtime process. Edit the owned paths and stop.",
+  "anchors": [
+    {
+      "symbol": "openPglite",
+      "invariant": "One PGlite session, one root ConnectionScope, one exclusive lease. The holder bypasses the waiter queue."
+    },
+    {
+      "symbol": "LeaseToken",
+      "invariant": "A live token runs now. A 5 second wait rolls back the open transaction and the error names the timeout."
+    }
+  ],
+  "acceptance": {
+    "kind": "command",
+    "command": "bun run test:unit && bun run test:pglite"
+  },
+  "out_of_scope": [
+    { "item": "Integration harness global swap", "tracked_as": "add-scope-harness" },
+    { "item": "Wasmtime process and the reopen spike", "tracked_as": "spike-wasmtime-reopen" },
+    { "item": "Savepoints", "tracked_as": "docs/PRD.md AR7" }
+  ],
+  "constraints": {
+    "permission": "write",
+    "paths": [
+      "src",
+      "package.json",
+      "bun.lock",
+      "tsconfig.json",
+      "vitest.config.ts",
+      "openspec/changes/add-pglite-adapter/tasks.md"
+    ],
+    "do_not": ["fold", "push", "deploy", "edit ARCHITECTURE.md", "build the Wasmtime process"]
+  }
+}
