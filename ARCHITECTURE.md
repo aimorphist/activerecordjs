@@ -31,13 +31,13 @@ Model / QueryBuilder / associations
 
 Node keeps a separate helper. That helper stores the active scope in `AsyncLocalStorage`, which is what lets `User.find` stay unchanged on Node. Browser code and any future guest call a scope-bound Model. A call with no scope throws before it touches a database.
 
-The core entry is package export `.` (`src/index.ts`). It imports neither a `node:` builtin, nor `postgres`, nor `@electric-sql/pglite`. `./postgres-js` owns the driver client. `./node` owns the AsyncLocalStorage binding. There is no `pglite` export yet.
+The core entry is package export `.` (`src/index.ts`). It imports neither a `node:` builtin, nor `postgres`, nor `@electric-sql/pglite`. `./postgres-js` owns the postgres.js client. `./pglite` owns the PGlite client and opens it with `openPglite`. `./node` owns the AsyncLocalStorage binding.
 
 | Entry | Export | Holds |
 |---|---|---|
 | core | `.` | Model, query builder, associations, `ConnectionScope`, `LeaseToken`, `PgSession` |
 | `postgres-js` | `./postgres-js` | `createConnection`, `createPooledConnection` |
-| `pglite` | not published | open a PGlite database and the lease |
+| `pglite` | `./pglite` | `openPglite`: one PGlite database and the lease |
 | `node` | `./node` | AsyncLocalStorage binding for the active scope |
 
 `createActiveRecordJS(db)` stays on the Node entry. It binds the scope and returns the Model factory. Other hosts open a scope and run work inside it.
@@ -71,7 +71,7 @@ One lease owns the session:
 - Work that carries the lease token runs. A FIFO queue alone would deadlock the holder behind the next waiter.
 - The wait is bounded at 5 seconds. On timeout the open transaction rolls back, the lease is released, and the error names the timeout.
 
-If PGlite already serializes statements inside its client, the lease is still the transaction owner. It is not a second statement queue unless the client does not serialize. That is checked when the adapter is built.
+PGlite 0.5 already serializes statements. That queue has no timeout and no holder token. This lease is the transaction owner. It is not a second statement queue.
 
 `drizzle-orm` `pg-proxy` throws from `transaction()`. The Wasmtime path does not use that session. A small Drizzle session, the same kind `drizzle-orm/pglite` already is, owns `BEGIN` and `COMMIT` on every adapter. `scope.transaction()` is the API. Raw `session.transaction()` works on postgres.js and on PGlite.
 
