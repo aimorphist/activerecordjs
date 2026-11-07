@@ -1,13 +1,20 @@
 ## ADDED Requirements
 
 ### Requirement: Native Wasmtime host
-The server process SHALL be a native Wasmtime host. It SHALL load one WASI Postgres module, own one `Store` on one thread, and preopen one data directory. The server path SHALL NOT run Node. Callers SHALL use in-process operations, not a network listener: `submit(sql, params)`, `begin()`, `submit(token, sql, params)`, `commit(token)`, and `rollback(token)`. `params` SHALL travel separately from the SQL text. The SQL text the guest receives SHALL NOT contain the parameter values. `submit` SHALL return rows or an error. The host SHALL reject SQL whose text begins a transaction-control statement (`BEGIN`, `COMMIT`, `ROLLBACK`, `SAVEPOINT`) before the guest sees it.
+The server process SHALL be a native Wasmtime host. It SHALL load one WASI Postgres module, own one `Store` on one thread, and preopen one data directory. The server path SHALL NOT run Node. Callers SHALL use in-process operations, not a network listener: `submit(sql, params)`, `begin()`, `submit(token, sql, params)`, `commit(token)`, and `rollback(token)`. `params` SHALL travel separately from the SQL text. The SQL text the guest receives SHALL NOT contain the parameter values. `submit` SHALL return rows or an error. Each `submit` SHALL carry one statement. After leading whitespace and leading `--` or `/* */` comments are removed, a semicolon with any non-whitespace after it SHALL be rejected as more than one statement. A single trailing semicolon SHALL be one statement. The first keyword, compared case-insensitively, SHALL NOT be `BEGIN`, `COMMIT`, `ROLLBACK`, `SAVEPOINT`, `START`, `END`, or `ABORT`. The host SHALL reject these before any guest call. A rejection SHALL leave the token and the transaction as they were.
 
 #### Scenario: A bound query does not use Node
 - GIVEN the acceptance command `bash host/wasmtime/accept.sh`
 - WHEN it serves one bound-parameter statement
 - THEN the serving process is the native host
 - AND that command does not invoke Node to serve SQL
+
+#### Scenario: Transaction control in the SQL text does not run
+- GIVEN a live token
+- WHEN the caller submits `END`, or submits ` -- note` followed by `START TRANSACTION`, or submits two statements separated by a semicolon
+- THEN the host rejects the submission before the guest runs
+- AND the token is still live
+- AND the transaction is unchanged
 
 #### Scenario: A punctuation value stays out of the SQL text
 - GIVEN a parameter value that contains a quote, a semicolon, a comment marker, and the word café
