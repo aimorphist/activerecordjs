@@ -2,6 +2,8 @@
 
 > **ACTIVE BUILD**
 
+**Rigor:** architecture
+
 ## Why
 
 Model, the query builder, and the association helpers all read one process-wide `PostgresJsDatabase` through `getGlobalConnection()`. That helper imports `node:async_hooks` and `postgres`, and `src/index.ts` re-exports it, so the package root cannot load in a browser or a guest. A second database needs a session type and a scope that those callers keep, with Node's ambient binding kept on its own entry.

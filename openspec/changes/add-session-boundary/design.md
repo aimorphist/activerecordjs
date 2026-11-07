@@ -12,19 +12,29 @@
 
 The PGlite entry is not created here. `add-pglite-adapter` adds it. Core does not import it.
 
-Core reads the active scope through a reader the node entry installs when it loads. Core does not import `node:async_hooks`. A process-wide swap of the database object across an `await` is not that reader. The reader returns the scope stored for the current async context.
+Core holds no session. An unbound static call reads a reader the node entry installs when it loads. Core does not import `node:async_hooks`. The reader returns the AsyncLocalStorage store for the current context, otherwise the node entry's default scope. A captured scope on a model, builder, instance, or association does not consult that reader.
+
+## Binding
+
+`scope.model(table)` returns a model class closed over that scope. That is the core-only path. A browser caller loads core, opens a postgres.js or later PGlite scope, and calls `find` on `scope.model(table)`. No node entry is loaded.
+
+`scope.run(fn)` calls `fn` with the scope. It does not retarget a model already bound to another scope.
+
+On Node, `createActiveRecordJS(db)` stores a default scope in the node entry and returns the factory. Unbound `User.find` uses the AsyncLocalStorage store when one is set, and otherwise that default. `setGlobalConnection(db)` replaces the node default for tests. It does not write a session into core. `runWithConnection(db, fn)` sets the store for `fn` and restores the previous store, including the default, when `fn` returns. Two concurrent Node contexts therefore see two stores.
+
+Captured scope wins over both the store and the node default. Hooks and belongs-to loads use the scope on the owner. Inside `transaction` that is the callback scope, so the related `find` runs on the transaction session.
 
 ## Scope
 
-`ConnectionScope` has `run(fn)`, `transaction(fn)`, and `close()`.
+`ConnectionScope` has `run(fn)`, `transaction(fn)`, `close()`, and `model(table)`.
 
-`transaction` on the postgres.js scope begins a driver transaction on the session that scope already holds, passes the callback a scope that carries the lease token, and commits or rolls back when the callback finishes, including hook awaits. That is ownership of one connection's transaction. It is not a process-wide queue. The single-session waiter queue, the token bypass of FIFO, and the 5 second timeout are how the PGlite adapter implements this same `transaction` method. They land in `add-pglite-adapter`, against the token this scope already carries.
+`transaction` on the postgres.js scope begins a driver transaction on the connection that scope already holds. The callback receives a child scope whose session is the driver's transaction session and whose lease token is live across hook awaits. Commit, rollback, and a failure of completion itself all retire that token. This is ownership of one connection's transaction. It is not a process-wide queue. The single-session waiter queue, the token bypass of FIFO, and the 5 second timeout are how the PGlite adapter implements this same `transaction` method. They land in `add-pglite-adapter`.
 
-Nested `transaction` throws. No flatten, no savepoint.
+`transaction` on the callback scope throws. `transaction` on the same root, while its callback is in progress, throws. A different root scope may enter `transaction` at the same time. The postgres.js pool stays a pool. No flatten, no savepoint.
 
-`close` rejects queued work and closes what that adapter owns. For postgres.js that is the client this scope opened.
+After the token retires, the child scope and any builder created from it throw before a driver method. `close` on the child rejects further child work and leaves the root client open. `close` on the root during a callback rolls the transaction back, retires the token, and closes the client that root owns.
 
-A database call with no scope throws before any driver method. A missing scope does not wait.
+A database call with no captured scope and no node ambient scope throws before any driver method. A missing scope does not wait.
 
 `Model.query(fn)` passes `fn` the `PgDatabase` for the bound scope. The parameter type stops being `PostgresJsDatabase`.
 
@@ -47,4 +57,6 @@ Raw `where` values still go through `sql.raw` in `query-builder.ts`. Bound `eq()
 
 ## Check
 
-A unit test or a small script walks the core entry's import graph and fails if it finds `node:`, `postgres`, or `@electric-sql/pglite`. `bun run test:unit` is the other gate. The Postgres integration suite is not a gate for this change.
+A unit test walks the published core subpath, follows static imports and dynamic `import()`, and fails if it finds `node:`, `postgres`, or `@electric-sql/pglite`. The same test loads the `postgres-js` and `node` subpaths as separate entries. `bun run test:unit` is the other gate. The Postgres integration suite is not a gate for this change.
+
+The fake-session tests for scope A versus B, concurrent Node contexts, nested receivers, token retirement, and close ownership are the tasks named in the 2026-11-06 review.
