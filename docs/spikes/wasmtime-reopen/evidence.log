@@ -1,0 +1,465 @@
+RUN 2026-11-07T16:49:32Z
+Darwin dukedorje-2.local 27.0.0 Darwin Kernel Version 27.0.0: Tue Aug 11 21:22:49 PDT 2026; root:xnu-13432.1.9~1/RELEASE_ARM64_T6000 arm64
+Apple clang version 21.0.0 (clang-2100.3.34.2)
+Target: arm64-apple-darwin27.0.0
+Thread model: posix
+InstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+100  9.9M  100  9.9M    0     0  23.9M      0 --:--:-- --:--:-- --:--:-- 23.9M
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100 13.6M  100 13.6M    0     0  37.0M      0 --:--:-- --:--:-- --:--:-- 37.0M
+.work/wasmtime.tar.xz: OK
+.work/pglite.tar.gz: OK
+.work/host:                                 Mach-O 64-bit executable arm64
+.work/runtime/tmp/pglite/bin/postgres.wasi: WebAssembly (wasm) binary module version 0x1 (MVP)
+06494174ce71c387898fdc8d246062448a4aeeda3d290a7c347a5d87ba39e53c  .work/runtime/tmp/pglite/bin/postgres.wasi
+HOST pid=64653 phase=write
+EXPORT memory
+EXPORT _start
+EXPORT interactive_file
+EXPORT interactive_write
+EXPORT interactive_read
+EXPORT use_wire
+EXPORT clear_error
+EXPORT interactive_one
+EXPORT pg_initdb
+EXPORT use_socketfile
+EXPORT setup
+EXPORT loop
+PREOPEN count=1 host=/tmp/arjs-tree/docs/spikes/wasmtime-reopen/.work/runtime guest=/
+=setup=
+
+
+
+   @@@@@@@@@@@@@@@@@@@@@@@@@ EXITING with live runtime port 1 @@@@@@@@@@@@@@@@
+
+
+ >>>>>>>>>>>>> FORCING EMBED MODE <<<<<<<<<<<<<<<<
+# 1095: argv0 (/tmp/pglite/bin/postgres.wasi) PGUSER=postgres PGDATA=/tmp/pglite/base PGDATABASE=template1 PGEMBED=(null) REPL=N
+# ============= argv dump ==================
+/tmp/pglite/bin/postgres.wasi --single postgres 
+# ============= arg->env dump ==================
+
+# =========================================
+# ============= env dump ==================
+# ENVIRONMENT=wasi-embed
+# PREFIX=/tmp/pglite
+# PGDATA=/tmp/pglite/base
+# PGSYSCONFDIR=/tmp/pglite
+# PGUSER=postgres
+# PGDATABASE=template1
+# MODE=REACT
+# REPL=N
+# TZ=UTC
+# PGTZ=UTC
+# PATH=/tmp/pglite/bin
+# PGCLIENTENCODING=UTF8
+# LC_CTYPE=C
+# PG_COLOR=always
+# =========================================
+# 1267: argv0 (/tmp/pglite/bin/postgres) PGUSER=postgres PGDATA=/tmp/pglite/base PGDATABASE=template1 PGEMBED=(null) REPL=N
+# 1360: exit with live runtime (norepl, (no)db)
+LOG:  invalid binary "/tmp/pglite/bin/postgres": No such file or directory
+LOG:  invalid binary "/tmp/pglite/bin/postgres": No such file or directory
+WARNING:  /tmp/pglite/bin/postgres:212: could not locate my own executable path
+2026-11-07 16:49:39.221 GMT [66600] DEBUG:  mmap(144703488) with MAP_HUGETLB failed, huge pages disabled: Invalid argument
+# 287: shm_open(/tmp/PostgreSQL.4031258302) => 4
+# 1066: pg_initdb()
+# 1080: pg_initdb: db exists at : /tmp/pglite/base TODO: test for db name : template1 
+00000000000000000000000000001101
+# 47
+# 53
+# 56
+# 1228: CreateLockFile(postmaster.pid) w+ (forced)
+# 91
+# 415:/data/git/pglite/postgresql-REL_16_STABLE/src/backend/storage/ipc/ipc.c on_shmem_exit(pg_on_exit_callback function, Datum arg) STUB
+# FIXING: int shmget (key_t __key=1585308327, size_t __size=40, int __shmflg=1920) pagesize default=65536
+# 415:/data/git/pglite/postgresql-REL_16_STABLE/src/backend/storage/ipc/ipc.c on_shmem_exit(pg_on_exit_callback function, Datum arg) STUB
+# FIXING: void *shmat (int __shmid=666, const void *__shmaddr=0, int __shmflg=0)
+# 415:/data/git/pglite/postgresql-REL_16_STABLE/src/backend/storage/ipc/ipc.c on_shmem_exit(pg_on_exit_callback function, Datum arg) STUB
+# 415:/data/git/pglite/postgresql-REL_16_STABLE/src/backend/storage/ipc/ipc.c on_shmem_exit(pg_on_exit_callback function, Datum arg) STUB
+# 415:/data/git/pglite/postgresql-REL_16_STABLE/src/backend/storage/ipc/ipc.c on_shmem_exit(pg_on_exit_callback function, Datum arg) STUB2026-11-07 16:49:39.269 GMT [66600] LOG:  database system was interrupted; last known up at 2025-01-16 10:50:39 GMT
+# 117(FATAL): insert_timeout(TimeoutId id=11, int index=0): /data/git/pglite/postgresql-REL_16_STABLE/src/backend/utils/misc/timeout.c
+2026-11-07 16:49:43.043 GMT [66600] DEBUG:  checkpoint record is at 0/A89408
+2026-11-07 16:49:43.043 GMT [66600] DEBUG:  redo record is at 0/A89408; shutdown true
+2026-11-07 16:49:43.043 GMT [66600] DEBUG:  next transaction ID: 1039; next OID: 32768
+2026-11-07 16:49:43.043 GMT [66600] DEBUG:  next MultiXactId: 1; next MultiXactOffset: 0
+2026-11-07 16:49:43.043 GMT [66600] DEBUG:  oldest unfrozen transaction ID: 723, in database 1
+2026-11-07 16:49:43.043 GMT [66600] DEBUG:  oldest MultiXactId: 1, in database 1
+2026-11-07 16:49:43.043 GMT [66600] DEBUG:  commit timestamp Xid oldest/newest: 0/0
+2026-11-07 16:49:43.043 GMT [66600] LOG:  database system was not properly shut down; automatic recovery in progress
+2026-11-07 16:49:43.043 GMT [66600] DEBUG:  transaction ID wrap limit is 2147484370, limited by database with OID 1
+2026-11-07 16:49:43.043 GMT [66600] DEBUG:  MultiXactId wrap limit is 2147483648, limited by database with OID 1
+2026-11-07 16:49:43.044 GMT [66600] DEBUG:  starting up replication slots
+2026-11-07 16:49:43.044 GMT [66600] DEBUG:  xmin required by slots: data 0, catalog 0
+2026-11-07 16:49:43.056 GMT [66600] DEBUG:  resetting unlogged relations: cleanup 1 init 0
+2026-11-07 16:49:43.094 GMT [66600] LOG:  redo starts at 0/A89480
+2026-11-07 16:49:43.096 GMT [66600] LOG:  invalid record length at 0/A90C10: expected at least 24, got 0
+2026-11-07 16:49:43.096 GMT [66600] LOG:  redo done at 0/A90BA8 system usage: CPU: user: 0.3591 s, system: 0.3576 s, elapsed: 0.00 s
+2026-11-07 16:49:43.096 GMT [66600] DEBUG:  resetting unlogged relations: cleanup 0 init 1
+
+# 415:/data/git/pglite/postgresql-REL_16_STABLE/src/backend/storage/ipc/ipc.c on_shmem_exit(pg_on_exit_callback function, Datum arg) STUB
+# 415:/data/git/pglite/postgresql-REL_16_STABLE/src/backend/storage/ipc/ipc.c on_shmem_exit(pg_on_exit_callback function, Datum arg) STUB
+# 130
+# 415:/data/git/pglite/postgresql-REL_16_STABLE/src/backend/storage/ipc/ipc.c on_shmem_exit(pg_on_exit_callback function, Datum arg) STUB
+# 415:/data/git/pglite/postgresql-REL_16_STABLE/src/backend/storage/ipc/ipc.c on_shmem_exit(pg_on_exit_callback function, Datum arg) STUB
+# 415:/data/git/pglite/postgresql-REL_16_STABLE/src/backend/storage/ipc/ipc.c on_shmem_exit(pg_on_exit_callback function, Datum arg) STUB
+# 415:/data/git/pglite/postgresql-REL_16_STABLE/src/backend/storage/ipc/ipc.c on_shmem_exit(pg_on_exit_callback function, Datum arg) STUB
+# 224: schedule_alarm(TimestampTz now)
+# 224: schedule_alarm(TimestampTz now)
+# 224: schedule_alarm(TimestampTz now)
+# 224: schedule_alarm(TimestampTz now)
+# 224: schedule_alarm(TimestampTz now)2026-11-07 16:49:43.159 GMT [66600] DEBUG:  MultiXactId wrap limit is 2147483648, limited by database with OID 1
+2026-11-07 16:49:43.159 GMT [66600] DEBUG:  MultiXact member stop limit is now 4294914944 based on MultiXact 1
+2026-11-07 16:49:43.162 GMT [66600] DEBUG:  performing replication slot checkpoint
+# 287: shm_open(/tmp/PostgreSQL.2253436100) => 10
+INITDB pg_initdb=12
+SQL SHOW server_version
+WIRE sent=25 received=71
+RESPONSE T payload=35
+RESPONSE D payload=10 row=16.6
+RESPONSE C payload=5 command=SHOW
+RESPONSE Z payload=1 transaction=I
+SQL SELECT current_database()
+WIRE sent=31 received=82
+RESPONSE T payload=37
+RESPONSE D payload=15 row=template1
+RESPONSE C payload=9 command=SELECT 1
+RESPONSE Z payload=1 transaction=I
+SQL SHOW fsync
+
+# 415:/data/git/pglite/postgresql-REL_16_STABLE/src/backend/storage/ipc/ipc.c on_shmem_exit(pg_on_exit_callback function, Datum arg) STUB
+180: wire mode, repl off, echo on
+# 220: FIXME: socketfile
+
+
+
+
+# 141: io_init  --------- Ready for CLIENT ---------
+# 405: node+repl is_wire -> true : Q
+# 451: sjlj exception handler off
+# 486: wire=1 1stchar=Q Q: SHOW server_version
+# 494: end of wire, rfq=0
+pg> 
+# 556: end packet - sending rfq
+# 554: client:ready -> read(71) /tmp/pglite/base/.s.PGSQL.5432.lock.out->/tmp/pglite/base/.s.PGSQL.5432.out
+# 405: node+repl is_wire -> true : Q
+# 451: sjlj exception handler off
+# 486: wire=1 1stchar=Q Q: SELECT current_database()
+# 494: end of wire, rfq=0
+pg> 
+# 556: end packet - sending rfq
+# 554: client:ready -> read(82) /tmp/pglite/base/.s.PGSQL.5432.lock.out->/tmp/pglite/base/.s.PGSQL.5432.out
+# 405: node+repl is_wire -> true : Q
+# 451: sjlj exception handler off
+# 486: wire=1 1stchar=Q Q: SHOW fsync
+# 494: end of wire, rfq=0
+pg> 
+# 556: end packet - sending rfq
+# 554: client:ready -> read(60) /tmp/pglite/base/.s.PGSQL.5432.lock.out->/tmp/pglite/base/.s.PGSQL.5432.out
+WIRE sent=16 received=60
+RESPONSE T payload=26
+RESPONSE D payload=8 row=on
+RESPONSE C payload=5 command=SHOW
+RESPONSE Z payload=1 transaction=I
+SQL SHOW synchronous_commit
+WIRE sent=29 received=73
+RESPONSE T payload=39
+RESPONSE D payload=8 row=on
+RESPONSE C payload=5 command=SHOW
+RESPONSE Z payload=1 transaction=I
+SQL CREATE TABLE wasmtime_reopen(value text PRIMARY KEY)
+2026-11-07 16:49:43.238 GMT [66600] DEBUG:  building index "pg_toast_32768_index" on table "pg_toast_32768" serially
+2026-11-07 16:49:43.238 GMT [66600] DEBUG:  index "pg_toast_32768_index" can safely use deduplication
+2026-11-07 16:49:43.266 GMT [66600] DEBUG:  CREATE TABLE / PRIMARY KEY will create implicit index "wasmtime_reopen_pkey" for table "wasmtime_reopen"
+2026-11-07 16:49:43.274 GMT [66600] DEBUG:  building index "wasmtime_reopen_pkey" on table "wasmtime_reopen" serially
+2026-11-07 16:49:43.274 GMT [66600] DEBUG:  index "wasmtime_reopen_pkey" can safely use deduplication
+WIRE sent=58 received=24
+RESPONSE C payload=13 command=CREATE TABLE
+RESPONSE Z payload=1 transaction=I
+SQL BEGIN
+WIRE sent=11 received=17
+RESPONSE C payload=6 command=BEGIN
+RESPONSE Z payload=1 transaction=T
+PARAMETER SQL=INSERT INTO wasmtime_reopen(value) VALUES ($1::text) RETURNING value
+BIND value=committed ' ; -- unicode: café
+# 405: node+repl is_wire -> true : Q
+# 451: sjlj exception handler off
+# 486: wire=1 1stchar=Q Q: SHOW synchronous_commit
+# 494: end of wire, rfq=0
+pg> 
+# 556: end packet - sending rfq
+# 554: client:ready -> read(73) /tmp/pglite/base/.s.PGSQL.5432.lock.out->/tmp/pglite/base/.s.PGSQL.5432.out
+# 405: node+repl is_wire -> true : Q
+# 451: sjlj exception handler off
+# 486: wire=1 1stchar=Q Q: CREATE TABLE wasmtime_reopen(value text PRIMARY KEY)
+# 494: end of wire, rfq=0
+pg> 
+# 556: end packet - sending rfq
+# 554: client:ready -> read(24) /tmp/pglite/base/.s.PGSQL.5432.lock.out->/tmp/pglite/base/.s.PGSQL.5432.out
+# 405: node+repl is_wire -> true : Q
+# 451: sjlj exception handler off
+# 486: wire=1 1stchar=Q Q: BEGIN
+# 494: end of wire, rfq=0
+pg> 
+# 556: end packet - sending rfq
+# 554: client:ready -> read(17) /tmp/pglite/base/.s.PGSQL.5432.lock.out->/tmp/pglite/base/.s.PGSQL.5432.out
+@@@@ TODO 235: idle in transaction
+# 405: node+repl is_wire -> true : P
+# 451: sjlj exception handler off
+# 486: wire=1 1stchar=P Q: 
+WIRE sent=144 received=74
+RESPONSE 1 payload=0
+RESPONSE 2 payload=0
+RESPONSE D payload=37 row=committed ' ; -- unicode: café
+RESPONSE C payload=11 command=INSERT 0 1
+RESPONSE Z payload=1 transaction=T
+SQL COMMIT
+WIRE sent=12 received=18
+RESPONSE C payload=7 command=COMMIT
+RESPONSE Z payload=1 transaction=I
+SQL BEGIN
+WIRE sent=11 received=17
+RESPONSE C payload=6 command=BEGIN
+RESPONSE Z payload=1 transaction=T
+PARAMETER SQL=INSERT INTO wasmtime_reopen(value) VALUES ($1::text) RETURNING value
+BIND value=rolled-back ' ; --
+# 496: no end of wire -> pipelining, rfq=0
+# 489: PIPELINING [B]!
+# 496: no end of wire -> pipelining, rfq=1
+# 489: PIPELINING [E]!
+# 496: no end of wire -> pipelining, rfq=1
+# 489: PIPELINING [S]!
+# 494: end of wire, rfq=1
+# 556: end packet - sending rfq
+# 554: client:ready -> read(74) /tmp/pglite/base/.s.PGSQL.5432.lock.out->/tmp/pglite/base/.s.PGSQL.5432.out
+@@@@ TODO 235: idle in transaction
+# 405: node+repl is_wire -> true : Q
+# 451: sjlj exception handler off
+# 486: wire=1 1stchar=Q Q: COMMIT
+# 494: end of wire, rfq=0
+pg> 
+# 556: end packet - sending rfq
+# 554: client:ready -> read(18) /tmp/pglite/base/.s.PGSQL.5432.lock.out->/tmp/pglite/base/.s.PGSQL.5432.out
+# 405: node+repl is_wire -> true : Q
+# 451: sjlj exception handler off
+# 486: wire=1 1stchar=Q Q: BEGIN
+# 494: end of wire, rfq=0
+pg> 
+# 556: end packet - sending rfq
+# 554: client:ready -> read(17) /tmp/pglite/base/.s.PGSQL.5432.lock.out->/tmp/pglite/base/.s.PGSQL.5432.out
+@@@@ TODO 235: idle in transaction
+# 405: node+repl is_wire -> true : P
+# 451: sjlj exception handler offWIRE sent=131 received=61
+RESPONSE 1 payload=0
+RESPONSE 2 payload=0
+RESPONSE D payload=24 row=rolled-back ' ; --
+RESPONSE C payload=11 command=INSERT 0 1
+RESPONSE Z payload=1 transaction=T
+SQL ROLLBACK
+2026-11-07 16:49:43.305 GMT [66600] WARNING:  # 1743: aborting transaction 1043
+WIRE sent=14 received=124
+RESPONSE N payload=99
+RESPONSE C payload=9 command=ROLLBACK
+RESPONSE Z payload=1 transaction=I
+SQL SELECT value FROM wasmtime_reopen ORDER BY value
+
+# 486: wire=1 1stchar=P Q: 
+# 496: no end of wire -> pipelining, rfq=0
+# 489: PIPELINING [B]!
+# 496: no end of wire -> pipelining, rfq=1
+# 489: PIPELINING [E]!
+# 496: no end of wire -> pipelining, rfq=1
+# 489: PIPELINING [S]!
+# 494: end of wire, rfq=1
+# 556: end packet - sending rfq
+# 554: client:ready -> read(61) /tmp/pglite/base/.s.PGSQL.5432.lock.out->/tmp/pglite/base/.s.PGSQL.5432.out
+@@@@ TODO 235: idle in transaction
+# 405: node+repl is_wire -> true : Q
+# 451: sjlj exception handler off
+# 486: wire=1 1stchar=Q Q: ROLLBACK
+# 494: end of wire, rfq=0
+pg> 
+# 556: end packet - sending rfq
+# 554: client:ready -> read(124) /tmp/pglite/base/.s.PGSQL.5432.lock.out->/tmp/pglite/base/.s.PGSQL.5432.out
+# 405: node+repl is_wire -> true : Q
+# 451: sjlj exception handler off
+# 486: wire=1 1stchar=Q Q: SELECT value FROM wasmtime_reopen ORDER BY value
+# 494: end of wire, rfq=0
+pg> 
+# 556: end packet - sending rfq
+# 554: client:ready -> read(93) /tmp/pglite/base/.s.PGSQL.5432.lock.out->/tmp/pglite/base/.s.PGSQL.5432.out
+WIRE sent=54 received=93
+RESPONSE T payload=26
+RESPONSE D payload=37 row=committed ' ; -- unicode: café
+RESPONSE C payload=9 command=SELECT 1
+RESPONSE Z payload=1 transaction=I
+PASS phase
+WRITE PROCESS EXITED; launching a separate native process with the same preopen
+HOST pid=66686 phase=read
+EXPORT memory
+EXPORT _start
+EXPORT interactive_file
+EXPORT interactive_write
+EXPORT interactive_read
+EXPORT use_wire
+EXPORT clear_error
+EXPORT interactive_one
+EXPORT pg_initdb
+EXPORT use_socketfile
+EXPORT setup
+EXPORT loop
+PREOPEN count=1 host=/tmp/arjs-tree/docs/spikes/wasmtime-reopen/.work/runtime guest=/
+=setup=
+
+
+
+   @@@@@@@@@@@@@@@@@@@@@@@@@ EXITING with live runtime port 1 @@@@@@@@@@@@@@@@
+
+
+ >>>>>>>>>>>>> FORCING EMBED MODE <<<<<<<<<<<<<<<<
+# 1095: argv0 (/tmp/pglite/bin/postgres.wasi) PGUSER=postgres PGDATA=/tmp/pglite/base PGDATABASE=template1 PGEMBED=(null) REPL=N
+# ============= argv dump ==================
+/tmp/pglite/bin/postgres.wasi --single postgres 
+# ============= arg->env dump ==================
+
+# =========================================
+# ============= env dump ==================
+# ENVIRONMENT=wasi-embed
+# PREFIX=/tmp/pglite
+# PGDATA=/tmp/pglite/base
+# PGSYSCONFDIR=/tmp/pglite
+# PGUSER=postgres
+# PGDATABASE=template1
+# MODE=REACT
+# REPL=N
+# TZ=UTC
+# PGTZ=UTC
+# PATH=/tmp/pglite/bin
+# PGCLIENTENCODING=UTF8
+# LC_CTYPE=C
+# PG_COLOR=always
+# =========================================
+# 1267: argv0 (/tmp/pglite/bin/postgres) PGUSER=postgres PGDATA=/tmp/pglite/base PGDATABASE=template1 PGEMBED=(null) REPL=N
+# 1360: exit with live runtime (norepl, (no)db)
+LOG:  invalid binary "/tmp/pglite/bin/postgres": No such file or directory
+LOG:  invalid binary "/tmp/pglite/bin/postgres": No such file or directory
+WARNING:  /tmp/pglite/bin/postgres:212: could not locate my own executable path
+2026-11-07 16:49:45.366 GMT [66600] DEBUG:  mmap(144703488) with MAP_HUGETLB failed, huge pages disabled: Invalid argument
+# 287: shm_open(/tmp/PostgreSQL.4031258302) => 4
+# 1066: pg_initdb()
+# 1080: pg_initdb: db exists at : /tmp/pglite/base TODO: test for db name : template1 
+00000000000000000000000000001101
+# 47
+# 53
+# 56
+# 1228: CreateLockFile(postmaster.pid) w+ (forced)
+# 91
+# 415:/data/git/pglite/postgresql-REL_16_STABLE/src/backend/storage/ipc/ipc.c on_shmem_exit(pg_on_exit_callback function, Datum arg) STUB
+# FIXING: int shmget (key_t __key=1585308327, size_t __size=40, int __shmflg=1920) pagesize default=65536
+# 415:/data/git/pglite/postgresql-REL_16_STABLE/src/backend/storage/ipc/ipc.c on_shmem_exit(pg_on_exit_callback function, Datum arg) STUB
+# FIXING: void *shmat (int __shmid=666, const void *__shmaddr=0, int __shmflg=0)
+# 415:/data/git/pglite/postgresql-REL_16_STABLE/src/backend/storage/ipc/ipc.c on_shmem_exit(pg_on_exit_callback function, Datum arg) STUB
+# 415:/data/git/pglite/postgresql-REL_16_STABLE/src/backend/storage/ipc/ipc.c on_shmem_exit(pg_on_exit_callback function, Datum arg) STUB
+# 415:/data/git/pglite/postgresql-REL_16_STABLE/src/backend/storage/ipc/ipc.c on_shmem_exit(pg_on_exit_callback function, Datum arg) STUB2026-11-07 16:49:45.397 GMT [66600] LOG:  database system was interrupted; last known up at 2026-11-07 16:49:43 GMT
+# 117(FATAL): insert_timeout(TimeoutId id=11, int index=0): /data/git/pglite/postgresql-REL_16_STABLE/src/backend/utils/misc/timeout.c
+2026-11-07 16:49:49.958 GMT [66600] DEBUG:  checkpoint record is at 0/A90C10
+2026-11-07 16:49:49.959 GMT [66600] DEBUG:  redo record is at 0/A90C10; shutdown true
+2026-11-07 16:49:49.959 GMT [66600] DEBUG:  next transaction ID: 1041; next OID: 32768
+2026-11-07 16:49:49.959 GMT [66600] DEBUG:  next MultiXactId: 1; next MultiXactOffset: 0
+2026-11-07 16:49:49.959 GMT [66600] DEBUG:  oldest unfrozen transaction ID: 723, in database 1
+2026-11-07 16:49:49.959 GMT [66600] DEBUG:  oldest MultiXactId: 1, in database 1
+2026-11-07 16:49:49.959 GMT [66600] DEBUG:  commit timestamp Xid oldest/newest: 0/0
+2026-11-07 16:49:49.959 GMT [66600] LOG:  database system was not properly shut down; automatic recovery in progress
+2026-11-07 16:49:49.959 GMT [66600] DEBUG:  transaction ID wrap limit is 2147484370, limited by database with OID 1
+2026-11-07 16:49:49.959 GMT [66600] DEBUG:  MultiXactId wrap limit is 2147483648, limited by database with OID 1
+2026-11-07 16:49:49.959 GMT [66600] DEBUG:  starting up replication slots
+2026-11-07 16:49:49.959 GMT [66600] DEBUG:  xmin required by slots: data 0, catalog 0
+2026-11-07 16:49:49.964 GMT [66600] DEBUG:  resetting unlogged relations: cleanup 1 init 0
+2026-11-07 16:49:49.993 GMT [66600] LOG:  redo starts at 0/A90C88
+2026-11-07 16:49:50.002 GMT [66600] LOG:  invalid record length at 0/AB4D28: expected at least 24, got 0
+2026-11-07 16:49:50.002 GMT [66600] LOG:  redo done at 0/AB4D00 system usage: CPU: user: 0.3591 s, system: 0.3576 s, elapsed: 0.00 s
+2026-11-07 16:49:50.002 GMT [66600] DEBUG:  resetting unlogged relations: cleanup 0 init 1
+
+# 415:/data/git/pglite/postgresql-REL_16_STABLE/src/backend/storage/ipc/ipc.c on_shmem_exit(pg_on_exit_callback function, Datum arg) STUB
+# 415:/data/git/pglite/postgresql-REL_16_STABLE/src/backend/storage/ipc/ipc.c on_shmem_exit(pg_on_exit_callback function, Datum arg) STUB
+# 130
+# 415:/data/git/pglite/postgresql-REL_16_STABLE/src/backend/storage/ipc/ipc.c on_shmem_exit(pg_on_exit_callback function, Datum arg) STUB
+# 415:/data/git/pglite/postgresql-REL_16_STABLE/src/backend/storage/ipc/ipc.c on_shmem_exit(pg_on_exit_callback function, Datum arg) STUB
+# 415:/data/git/pglite/postgresql-REL_16_STABLE/src/backend/storage/ipc/ipc.c on_shmem_exit(pg_on_exit_callback function, Datum arg) STUB
+# 415:/data/git/pglite/postgresql-REL_16_STABLE/src/backend/storage/ipc/ipc.c on_shmem_exit(pg_on_exit_callback function, Datum arg) STUB
+# 224: schedule_alarm(TimestampTz now)
+# 224: schedule_alarm(TimestampTz now)
+# 224: schedule_alarm(TimestampTz now)
+# 224: schedule_alarm(TimestampTz now)
+# 224: schedule_alarm(TimestampTz now)2026-11-07 16:49:50.058 GMT [66600] DEBUG:  MultiXactId wrap limit is 2147483648, limited by database with OID 1
+2026-11-07 16:49:50.058 GMT [66600] DEBUG:  MultiXact member stop limit is now 4294914944 based on MultiXact 1
+2026-11-07 16:49:50.062 GMT [66600] DEBUG:  performing replication slot checkpoint
+# 287: shm_open(/tmp/PostgreSQL.2253436100) => 38
+INITDB pg_initdb=12
+SQL SHOW server_version
+WIRE sent=25 received=71
+RESPONSE T payload=35
+RESPONSE D payload=10 row=16.6
+RESPONSE C payload=5 command=SHOW
+RESPONSE Z payload=1 transaction=I
+SQL SELECT current_database()
+WIRE sent=31 received=82
+RESPONSE T payload=37
+RESPONSE D payload=15 row=template1
+RESPONSE C payload=9 command=SELECT 1
+RESPONSE Z payload=1 transaction=I
+SQL SHOW fsync
+
+# 415:/data/git/pglite/postgresql-REL_16_STABLE/src/backend/storage/ipc/ipc.c on_shmem_exit(pg_on_exit_callback function, Datum arg) STUB
+180: wire mode, repl off, echo on
+# 220: FIXME: socketfile
+
+
+
+
+# 141: io_init  --------- Ready for CLIENT ---------
+# 405: node+repl is_wire -> true : Q
+# 451: sjlj exception handler off
+# 486: wire=1 1stchar=Q Q: SHOW server_version
+# 494: end of wire, rfq=0
+pg> 
+# 556: end packet - sending rfq
+# 554: client:ready -> read(71) /tmp/pglite/base/.s.PGSQL.5432.lock.out->/tmp/pglite/base/.s.PGSQL.5432.out
+# 405: node+repl is_wire -> true : Q
+# 451: sjlj exception handler off
+# 486: wire=1 1stchar=Q Q: SELECT current_database()
+# 494: end of wire, rfq=0
+pg> 
+# 556: end packet - sending rfq
+# 554: client:ready -> read(82) /tmp/pglite/base/.s.PGSQL.5432.lock.out->/tmp/pglite/base/.s.PGSQL.5432.out
+# 405: node+repl is_wire -> true : Q
+# 451: sjlj exception handler off
+# 486: wire=1 1stchar=Q Q: SHOW fsync
+# 494: end of wire, rfq=0
+pg> 
+# 556: end packet - sending rfq
+# 554: client:ready -> read(60) /tmp/pglite/base/.s.PGSQL.5432.lock.out->/tmp/pglite/base/.s.PGSQL.5432.out
+WIRE sent=16 received=60
+RESPONSE T payload=26
+RESPONSE D payload=8 row=on
+RESPONSE C payload=5 command=SHOW
+RESPONSE Z payload=1 transaction=I
+SQL SHOW synchronous_commit
+WIRE sent=29 received=73
+RESPONSE T payload=39
+RESPONSE D payload=8 row=on
+RESPONSE C payload=5 command=SHOW
+RESPONSE Z payload=1 transaction=I
+SQL SELECT value FROM wasmtime_reopen ORDER BY value
+WIRE sent=54 received=93
+RESPONSE T payload=26
+RESPONSE D payload=37 row=committed ' ; -- unicode: café
+RESPONSE C payload=9 command=SELECT 1
+RESPONSE Z payload=1 transaction=I
+ASSERT reopen: committed row present, rolled-back row absent
+PASS phase
+PASS: placeholder + Bind, rollback, separate-process reopen

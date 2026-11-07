@@ -69,7 +69,7 @@ FR12. [MVP] The system shall allow session-level Postgres state (`SET`, temp tab
 
 FR13. [MVP] The system shall move the integration harness off swapping the global connection. PGlite tests take a scope and run one leased transaction at a time. Postgres.js tests may stay parallel.
 
-FR14. [MVP] The system shall ship a feasibility spike for the Wasmtime process: a native host, one WASI Postgres instance, one owner thread, a bound-parameter query, a rollback, and a reopen of the same data directory. The spike record is a pass/fail note in this file.
+FR14. [MVP] The system shall ship a feasibility spike for the Wasmtime process: a native host, one WASI Postgres instance, one owner thread, a bound-parameter query, a rollback, and a reopen of the same data directory. The spike record is a pass/fail note in this file. Result 2026-11-07: go. `docs/spikes/wasmtime-reopen/finding.md`. Artifact: draft `pglite-bindings` at `0d31326`, Wasmtime 38.0.3, PostgreSQL 16.6. A host SQL boundary met the sequence, so the ORM stays out of the guest for that shape.
 
 FR15. [Growth] The system shall ship the server process as Wasmtime plus WASI: one database owner thread, a bounded pool of caller threads, SQL and parameters as the only database crossing, and one preopened data directory.
 

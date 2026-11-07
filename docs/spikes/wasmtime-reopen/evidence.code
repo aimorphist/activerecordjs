@@ -1,0 +1,147 @@
+/* Native C host, Wasmtime C API. No JS, ORM, libpq, or SQL interpolation.
+ * argv: module.wasi preopened-root phase(write|read|inspect)
+ * The one preopen maps root -> /; all SQL crosses as Postgres wire bytes.
+ */
+#include <wasmtime.h>
+#include <wasi.h>
+#include <assert.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+
+static wasmtime_context_t *ctx;
+static wasmtime_instance_t instance;
+static char io[4096];
+static void fail(const char *s) { fprintf(stderr,"FAIL: %s\n",s); exit(1); }
+static void check(wasmtime_error_t *e, wasm_trap_t *t) {
+  wasm_byte_vec_t m;
+  if(e) { wasmtime_error_message(e,&m); fprintf(stderr,"ERROR: %.*s\n",(int)m.size,m.data); exit(1); }
+  if(t) { wasm_trap_message(t,&m); fprintf(stderr,"TRAP: %.*s\n",(int)m.size,m.data); exit(1); }
+}
+static int has(const char *s) {
+  wasmtime_extern_t x;
+  return wasmtime_instance_export_get(ctx,&instance,s,strlen(s),&x);
+}
+static int call(const char *s, int nargs, int arg) {
+  wasmtime_extern_t x;
+  if(!wasmtime_instance_export_get(ctx,&instance,s,strlen(s),&x)) fail(s);
+  assert(x.kind==WASMTIME_EXTERN_FUNC);
+  wasm_functype_t *ft=wasmtime_func_type(ctx,&x.of.func);
+  size_t nr=wasm_functype_results(ft)->size;
+  assert(nr<=1 && wasm_functype_params(ft)->size==(size_t)nargs);
+  wasmtime_val_t a={.kind=WASMTIME_I32,.of.i32=arg}, r;
+  wasm_trap_t *t=NULL;
+  wasmtime_error_t *e=wasmtime_func_call(ctx,&x.of.func,&a,nargs,&r,nr,&t);
+  check(e,t); wasm_functype_delete(ft);
+  return nr?r.of.i32:0;
+}
+typedef struct { unsigned char b[65536]; size_t n; } Buf;
+static void bytes(Buf *b,const void *p,size_t n) { assert(b->n+n<=sizeof b->b); memcpy(b->b+b->n,p,n); b->n+=n; }
+static void u8(Buf *b,int n) { unsigned char v=n; bytes(b,&v,1); }
+static void u16(Buf *b,int n) { uint16_t v=htons(n); bytes(b,&v,2); }
+static void u32(Buf *b,uint32_t n) { uint32_t v=htonl(n); bytes(b,&v,4); }
+static void str(Buf *b,const char *s) { bytes(b,s,strlen(s)+1); }
+static void msg(Buf *all,int tag,Buf *payload) { u8(all,tag);u32(all,payload->n+4);bytes(all,payload->b,payload->n); }
+static uint32_t be32(const unsigned char *p) { uint32_t v;memcpy(&v,p,4);return ntohl(v); }
+static unsigned be16(const unsigned char *p) { uint16_t v;memcpy(&v,p,2);return ntohs(v); }
+static Buf exchange(Buf *in) {
+  char path[4200],lock[4200];snprintf(path,sizeof path,"%s.in",io);snprintf(lock,sizeof lock,"%s.lock.in",io);
+  FILE *f=fopen(lock,"wb");if(!f) fail("open input");
+  assert(fwrite(in->b,1,in->n,f)==in->n);assert(fclose(f)==0);assert(rename(lock,path)==0);
+  Buf out={0};
+  call("interactive_one",0,0);
+  snprintf(path,sizeof path,"%s.out",io);
+  f=fopen(path,"rb");
+  if(f) { out.n=fread(out.b,1,sizeof out.b,f);assert(!ferror(f));fclose(f);unlink(path); }
+  snprintf(path,sizeof path,"%s.lock.out",io);unlink(path);
+  printf("WIRE sent=%zu received=%zu\n",in->n,out.n);
+  return out;
+}
+static int rows, complete, ready, parsed, bound;
+static char values[8][256];
+static void response(Buf *b) {
+  rows=complete=ready=parsed=bound=0;
+  for(size_t at=0;at<b->n;) {
+    assert(at+5<=b->n);unsigned char tag=b->b[at];uint32_t n=be32(b->b+at+1);
+    assert(n>=4 && at+1+n<=b->n);unsigned char *p=b->b+at+5;size_t len=n-4;
+    printf("RESPONSE %c payload=%zu",tag,len);
+    if(tag=='E') { for(size_t i=0;i<len;i++) putchar(p[i]?p[i]:'|');putchar('\n');fail("Postgres ErrorResponse"); }
+    if(tag=='C') { printf(" command=%s",p);complete++; }
+    if(tag=='Z') { assert(len==1);printf(" transaction=%c",p[0]);ready=p[0]; }
+    if(tag=='1') parsed++;
+    if(tag=='2') bound++;
+    if(tag=='D') {
+      assert(be16(p)==1 && len>=6);uint32_t l=be32(p+2);
+      assert(l<256 && l+6==len && rows<8);
+      memcpy(values[rows],p+6,l);values[rows][l]=0;
+      printf(" row=%s",values[rows]);rows++;
+    }
+    putchar('\n');at+=1+n;
+  }
+}
+static void simple(const char *sql, char state) {
+  Buf b={0},p={0};str(&p,sql);msg(&b,'Q',&p);
+  printf("SQL %s\n",sql);Buf out=exchange(&b);response(&out);
+  assert(complete>0 && ready==state);
+}
+static void parameter(const char *value,char state) {
+  const char *sql="INSERT INTO wasmtime_reopen(value) VALUES ($1::text) RETURNING value";
+  Buf b={0},p={0};str(&p,"");str(&p,sql);u16(&p,1);u32(&p,25);msg(&b,'P',&p);
+  p.n=0;str(&p,"");str(&p,"");u16(&p,0);u16(&p,1);u32(&p,strlen(value));bytes(&p,value,strlen(value));u16(&p,0);msg(&b,'B',&p);
+  p.n=0;str(&p,"");u32(&p,0);msg(&b,'E',&p);
+  p.n=0;msg(&b,'S',&p);
+  printf("PARAMETER SQL=%s\nBIND value=%s\n",sql,value);
+  Buf out=exchange(&b);response(&out);
+  assert(parsed==1 && bound==1 && complete==1 && ready==state && rows==1 && !strcmp(values[0],value));
+}
+int main(int argc,char **argv) {
+  assert(argc==4);setbuf(stdout,NULL);printf("HOST pid=%d phase=%s\n",getpid(),argv[3]);
+  wasm_engine_t *engine=wasm_engine_new();wasmtime_module_t *module=NULL;
+  FILE *f=fopen(argv[1],"rb");if(!f) fail("module open");fseek(f,0,SEEK_END);long size=ftell(f);rewind(f);
+  unsigned char *wasm=malloc(size);assert(fread(wasm,1,size,f)==(size_t)size);fclose(f);
+  check(wasmtime_module_new(engine,wasm,size,&module),NULL);free(wasm);
+  wasm_exporttype_vec_t exports;wasmtime_module_exports(module,&exports);
+  for(size_t i=0;i<exports.size;i++) { const wasm_name_t *n=wasm_exporttype_name(exports.data[i]);printf("EXPORT %.*s\n",(int)n->size,n->data); }
+  wasm_exporttype_vec_delete(&exports);
+  wasmtime_store_t *store=wasmtime_store_new(engine,NULL,NULL);ctx=wasmtime_store_context(store);
+  wasi_config_t *w=wasi_config_new();wasi_config_inherit_stdout(w);wasi_config_inherit_stderr(w);
+  const char *args[]={"/tmp/pglite/bin/postgres.wasi","--single","postgres"};
+  const char *keys[]={"ENVIRONMENT","PREFIX","PGDATA","PGSYSCONFDIR","PGUSER","PGDATABASE","MODE","REPL","TZ","PGTZ","PATH"};
+  const char *vals[]={"wasi-embed","/tmp/pglite","/tmp/pglite/base","/tmp/pglite","postgres","template1","REACT","N","UTC","UTC","/tmp/pglite/bin"};
+  assert(wasi_config_set_argv(w,3,args));assert(wasi_config_set_env(w,11,keys,vals));
+  assert(wasi_config_preopen_dir(w,argv[2],"/",3,3));
+  printf("PREOPEN count=1 host=%s guest=/\n",argv[2]);
+  check(wasmtime_context_set_wasi(ctx,w),NULL);
+  wasmtime_linker_t *linker=wasmtime_linker_new(engine);check(wasmtime_linker_define_wasi(linker),NULL);
+  wasm_trap_t *trap=NULL;wasmtime_error_t *err=wasmtime_linker_instantiate(linker,ctx,module,&instance,&trap);check(err,trap);
+  call("_start",0,0);
+  if(!strcmp(argv[3],"inspect")) return 0;
+  const char *init=has("pgl_initdb")?"pgl_initdb":"pg_initdb";
+  printf("INITDB %s=%d\n",init,call(init,0,0));
+  if(has("pgl_backend")) call("pgl_backend",0,0);
+  if(has("use_socketfile")) call("use_socketfile",0,0);
+  call("use_wire",1,1);
+  snprintf(io,sizeof io,"%s/tmp/pglite/base/.s.PGSQL.5432",argv[2]);
+  simple("SHOW server_version",'I');
+  simple("SELECT current_database()",'I');
+  assert(rows==1 && !strcmp(values[0],"template1"));
+  simple("SHOW fsync",'I');simple("SHOW synchronous_commit",'I');
+  if(!strcmp(argv[3],"write")) {
+    simple("CREATE TABLE wasmtime_reopen(value text PRIMARY KEY)",'I');
+    simple("BEGIN",'T');parameter("committed ' ; -- unicode: café",'T');simple("COMMIT",'I');
+    simple("BEGIN",'T');parameter("rolled-back ' ; --",'T');simple("ROLLBACK",'I');
+    simple("SELECT value FROM wasmtime_reopen ORDER BY value",'I');
+    assert(rows==1 && !strcmp(values[0],"committed ' ; -- unicode: café"));
+  } else {
+    assert(!strcmp(argv[3],"read"));
+    simple("SELECT value FROM wasmtime_reopen ORDER BY value",'I');
+    assert(rows==1 && !strcmp(values[0],"committed ' ; -- unicode: café"));
+    puts("ASSERT reopen: committed row present, rolled-back row absent");
+  }
+  puts("PASS phase");
+  wasmtime_store_delete(store);wasmtime_linker_delete(linker);wasmtime_module_delete(module);wasm_engine_delete(engine);
+  return 0;
+}

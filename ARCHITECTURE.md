@@ -91,11 +91,9 @@ Whether the ORM itself is inside the WASM guest is decided by the spike. The gue
 
 ## Spike
 
-No synthesis file exists for this. The claim is unverified.
+`wasmtime-reopen` went go on 2026-11-07. The record is `docs/spikes/wasmtime-reopen/finding.md`.
 
-`wasmtime-reopen`: one WASI Postgres under Wasmtime can execute one bound-parameter statement, roll a second statement back, exit, and after a new process opens the same directory show the committed row and not the rolled-back row.
-
-Confidence is low. The draft `pglite-bindings` tree documents incomplete overflow and exception handling, and this repository has never been built with ComponentizeJS. Verification is to run that sequence and record pass or fail. Until that record exists, the Wasmtime host is not scheduled as build work.
+One native Wasmtime host loaded the draft `pglite-bindings` WASI Postgres (PostgreSQL 16.6), ran one bound-parameter insert, rolled a second insert back, exited, and a second process opened the same directory and saw only the committed row. That is a host SQL boundary. The ORM does not have to enter the guest for this sequence. The draft still stubs overflow and exception handling, and this repository has not been built with ComponentizeJS. The Wasmtime process can now be specified.
 
 ## Out of this shape
 
