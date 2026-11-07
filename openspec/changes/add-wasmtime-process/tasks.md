@@ -12,6 +12,6 @@
 - [x] R2: Specify timeout/rollback completion, canceled-waiter removal, token retirement and stale-token rejection, busy-guest behavior, and fail-closed handling when cleanup cannot establish a clean session. Add timeout, late-holder, canceled-request, and injected cleanup-failure acceptance scenarios.
 - [x] R3: Specify seeded-directory startup without overwriting existing data and exclusive directory ownership, either enforced or an explicit prerequisite with limitations. Add acceptance for the chosen startup policy and second-owner rejection if enforced.
 - [x] R4: Name the native acceptance command and prerequisites; cover R1–R3, ordinary transaction/autocommit exclusion, nested-transaction rejection, and the existing bound-query/reopen sequence in tasks and the new capability delta. Keep Linux and durability claims aligned with demonstrated evidence.
-- [ ] Fresh advise after preparation
+- [x] Fresh advise after preparation
 - [x] R5: Reconcile the queue implementation task with the amended wait-only timeout contract: cancel/remove the expired waiter, return a timeout error, never dispatch it, and preserve the holder's transaction. See `reviews/2026-11-07-advise-2.md`.
 - [x] R6: Complete SQL transaction-control mediation across aliases, leading whitespace/comments, and the chosen multiple-statement policy; add rejection-before-dispatch acceptance cases that preserve transaction/token state. See `reviews/2026-11-07-advise-2.md`.
