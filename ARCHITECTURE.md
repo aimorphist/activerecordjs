@@ -31,14 +31,14 @@ Model / QueryBuilder / associations
 
 Node keeps a separate helper. That helper stores the active scope in `AsyncLocalStorage`, which is what lets `User.find` stay unchanged on Node. Browser code and any future guest call a scope-bound Model. A call with no scope throws before it touches a database.
 
-`src/index.ts` today re-exports `connection.ts`, and `connection.ts` imports `node:async_hooks` and `postgres` at the top. Those imports move to the entries that need them. The core entry imports neither, and it does not import `@electric-sql/pglite`.
+The core entry is package export `.` (`src/index.ts`). It imports neither a `node:` builtin, nor `postgres`, nor `@electric-sql/pglite`. `./postgres-js` owns the driver client. `./node` owns the AsyncLocalStorage binding. There is no `pglite` export yet.
 
-| Entry | Holds |
-|---|---|
-| core | Model, query builder, associations, scope types, `PgSession` |
-| `postgres-js` | `createConnection`, `createPooledConnection` |
-| `pglite` | open a PGlite database and the lease |
-| `node` | AsyncLocalStorage binding for the active scope |
+| Entry | Export | Holds |
+|---|---|---|
+| core | `.` | Model, query builder, associations, `ConnectionScope`, `LeaseToken`, `PgSession` |
+| `postgres-js` | `./postgres-js` | `createConnection`, `createPooledConnection` |
+| `pglite` | not published | open a PGlite database and the lease |
+| `node` | `./node` | AsyncLocalStorage binding for the active scope |
 
 `createActiveRecordJS(db)` stays on the Node entry. It binds the scope and returns the Model factory. Other hosts open a scope and run work inside it.
 
@@ -46,13 +46,14 @@ Node keeps a separate helper. That helper stores the active scope in `AsyncLocal
 
 `PgSession` is the shared Drizzle Postgres surface: `select`, `insert`, `update`, `delete`, `execute`, and `transaction`. Driver clients stay inside adapters. `Model.query` takes that surface, not `PostgresJsDatabase`.
 
-A scope has three operations:
+`ConnectionScope` has four operations:
 
-- `run(fn)` runs `fn` with the session.
-- `transaction(fn)` takes the exclusive lease, begins, runs `fn` with a scope that carries the lease token, then commits or rolls back and releases the lease.
-- `close()` rejects queued work and closes what the adapter owns.
+- `run(fn)` invokes `fn` with that scope.
+- `transaction(fn)` begins, runs `fn` with a callback scope that carries a `LeaseToken` and uses the driver's transaction session, then commits or rolls back and retires the token. The exclusive lease and its waiter are the PGlite adapter's job, described under Lease. They are not how the postgres.js scope works.
+- `close()` rejects further work on the scope it is called on. On a root it also rolls back an open transaction and closes the client that root owns. On a callback scope it leaves the root client open.
+- `model(table)` returns a model class bound to that scope. That is how a core-only caller finds a row.
 
-Query builders, model instances, and association lookups keep the scope they were created with. A hook that runs during a transaction uses that same scope. The implementation does not swap a global connection across an `await`. The integration harness in `src/setup.integration.ts` does that today. It moves onto scopes with the rest of the callers in `model.ts`, `query-builder.ts`, `associations.ts`, and the collection proxies.
+Query builders, model instances, and association lookups keep the scope they were created with. A hook that runs during a transaction uses that same scope. The implementation does not swap a global connection across an `await`. The integration harness in `src/setup.integration.ts` still swaps the node default around each test. The callers in `model.ts`, `query-builder.ts`, `associations.ts`, and the collection proxies are already on the scope they were created with.
 
 Nested `transaction()` throws. It does not flatten into the outer transaction, and it does not open a savepoint. Savepoints stay with AR7 in `docs/PRD.md`.
 
