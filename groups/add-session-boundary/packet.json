@@ -1,0 +1,61 @@
+{
+  "schema_version": "1.0",
+  "id": "pkt-add-session-boundary-act",
+  "node_id": "activerecordjs-3q8.1",
+  "capability": "session-boundary",
+  "change_id": "add-session-boundary",
+  "role": "worker",
+  "surface": "skill-host",
+  "density": "explicit",
+  "rigor": "architecture",
+  "load_class": "structure-clear",
+  "requester": {
+    "id": "agt-conductor",
+    "kind": "group",
+    "harness": "none",
+    "signing": { "mode": "stand-in", "stand_in_id": "agt-conductor" }
+  },
+  "assignee": {
+    "id": "agt-opus-implement",
+    "kind": "model",
+    "harness": "claude",
+    "interface": "claude-opus-5-5",
+    "signing": { "mode": "stand-in", "stand_in_id": "agt-opus-implement" }
+  },
+  "goal": "Implement openspec/changes/add-session-boundary. Read proposal.md, design.md, specs/session-boundary/spec.md, and tasks.md. Check a task only when that behavior is in the tree and covered by bun run test:unit. The contract is already accepted in reviews/2026-11-06-advise-2.md. Do not reopen it and do not edit ARCHITECTURE.md.\n\nPins to land: core, postgres-js, and node are separate package entries. The core import graph, including dynamic import(), has no node: builtin, no postgres, and no @electric-sql/pglite. The shared session type is Drizzle PgDatabase. ConnectionScope has run, transaction, close, and model(table). scope.model(table) binds a model class for a core-only caller. Captured scope on a model, builder, instance, hook, or association beats a later Node ambient scope. createActiveRecordJS, setGlobalConnection, and runWithConnection live on the node entry and use AsyncLocalStorage plus a node-entry default. Core holds no default session. Unbound User.find works on Node when a scope is bound and throws before any driver call when none is bound. transaction passes a callback scope that uses the driver transaction session and keeps the lease token across hook awaits. The token retires on commit, rollback, and a failed completion. transaction throws on the callback scope and on that same root while the callback is in progress. A different root may transact at the same time. close on the child does not close the root client. close on the root during a callback rolls back, retires the token, and then closes the root client. Nested calls do not flatten and do not open a savepoint.\n\nMove Model, the query builder, associations, the eager loader, and both collection proxies off getGlobalConnection onto the scope they were created with. src/collection-proxy.ts currently dynamic-imports ./connection. That must not pull node: or postgres into core. Leave the sql.raw where interpolation in place. Bound eq and inArray stay parameterized.\n\nLeave src/setup.integration.ts swapping the global connection. Change its import if the symbol moves. scripts/lib/bootstrap.ts imports setGlobalConnection from ../src. Point that import at the node entry.\n\nDo not add @electric-sql/pglite. Do not build the single-session waiter queue, the 5 second timeout, or the Wasmtime process. Edit the owned paths and stop.",
+  "anchors": [
+    {
+      "symbol": "scope.model",
+      "invariant": "A core caller binds a model without loading the node entry. Captured scope wins over the node ambient store."
+    },
+    {
+      "symbol": "ConnectionScope.transaction",
+      "invariant": "The callback uses the driver transaction session. Re-entry throws on that callback scope and on the same root. A different root may transact. The token retires when the transaction ends."
+    },
+    {
+      "symbol": "getGlobalConnection",
+      "invariant": "Core callers stop reading a process-wide PostgresJsDatabase. A missing scope throws before driver I/O."
+    }
+  ],
+  "acceptance": {
+    "kind": "command",
+    "command": "bun run test:unit"
+  },
+  "out_of_scope": [
+    { "item": "PGlite client, waiter queue, and 5 second lease timeout", "tracked_as": "add-pglite-adapter" },
+    { "item": "Stop the integration harness from swapping the global connection", "tracked_as": "add-scope-harness" },
+    { "item": "Wasmtime process and the reopen spike", "tracked_as": "spike-wasmtime-reopen" }
+  ],
+  "constraints": {
+    "permission": "write",
+    "paths": [
+      "src",
+      "scripts",
+      "package.json",
+      "tsconfig.json",
+      "vitest.config.ts",
+      "openspec/changes/add-session-boundary/tasks.md"
+    ],
+    "do_not": ["fold", "push", "deploy", "edit ARCHITECTURE.md", "add @electric-sql/pglite"]
+  }
+}

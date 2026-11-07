@@ -6,7 +6,7 @@ import {
 	rollbackTestTransaction
 } from './setup.integration';
 import { User, Post, Comment, Profile, Tag } from './fixtures/models';
-import { getGlobalConnection } from './connection';
+import { getGlobalConnection } from './node';
 import { sql } from 'drizzle-orm';
 
 describe('AR6 Phase 3: HABTM Integration Tests', () => {

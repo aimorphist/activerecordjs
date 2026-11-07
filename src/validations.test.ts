@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { Model } from './model';
 import { ValidationError } from './errors';
-import { setGlobalConnection } from './connection';
+import { setGlobalConnection } from './node';
 import { usersTable } from './fixtures/schema';
 
 // Mock database (validations don't need real DB)

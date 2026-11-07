@@ -6,7 +6,7 @@ import {
 	resolveHABTMConfig,
 	toSnakeCase
 } from './associations';
-import { getGlobalConnection } from './connection';
+import { bindModel, requireScope, type ConnectionScope } from './session';
 
 /**
  * EagerLoader batches association loading to prevent N+1 queries.
@@ -20,7 +20,8 @@ import { getGlobalConnection } from './connection';
 export async function eagerLoad(
 	records: any[],
 	associations: string[],
-	modelClass: any
+	modelClass: any,
+	scope: ConnectionScope | null = null
 ): Promise<void> {
 	if (records.length === 0 || associations.length === 0) return;
 
@@ -28,24 +29,29 @@ export async function eagerLoad(
 		if (modelClass.hasMany && assocName in modelClass.hasMany) {
 			const config = modelClass.hasMany[assocName];
 			if (config.through) {
-				await eagerLoadThrough(records, assocName, modelClass);
+				await eagerLoadThrough(records, assocName, modelClass, scope);
 			} else {
-				await eagerLoadHasMany(records, assocName, modelClass);
+				await eagerLoadHasMany(records, assocName, modelClass, scope);
 			}
 		} else if (modelClass.belongsTo && assocName in modelClass.belongsTo) {
-			await eagerLoadBelongsTo(records, assocName, modelClass);
+			await eagerLoadBelongsTo(records, assocName, modelClass, scope);
 		} else if (modelClass.hasOne && assocName in modelClass.hasOne) {
-			await eagerLoadHasOne(records, assocName, modelClass);
+			await eagerLoadHasOne(records, assocName, modelClass, scope);
 		} else if (modelClass.hasAndBelongsToMany && assocName in modelClass.hasAndBelongsToMany) {
 			// HABTM will be added in Phase 3
-			await eagerLoadHABTM(records, assocName, modelClass);
+			await eagerLoadHABTM(records, assocName, modelClass, scope);
 		} else {
 			throw new Error(`Unknown association '${assocName}' on ${modelClass.modelName}`);
 		}
 	}
 }
 
-async function eagerLoadHasMany(records: any[], assocName: string, modelClass: any) {
+async function eagerLoadHasMany(
+	records: any[],
+	assocName: string,
+	modelClass: any,
+	scope: ConnectionScope | null
+) {
 	const config = modelClass.hasMany[assocName];
 	const foreignKey = resolveHasManyForeignKey(modelClass.modelName, config);
 	const pk = modelClass.primaryKey;
@@ -55,7 +61,7 @@ async function eagerLoadHasMany(records: any[], assocName: string, modelClass: a
 	if (ownerIds.length === 0) return;
 
 	// Batch load
-	const RelatedModel = config.model();
+	const RelatedModel = bindModel(config.model(), scope);
 	const allRelated = await RelatedModel.where({}).whereIn(foreignKey, ownerIds).all();
 
 	// Distribute to owners
@@ -72,7 +78,12 @@ async function eagerLoadHasMany(records: any[], assocName: string, modelClass: a
 	}
 }
 
-async function eagerLoadBelongsTo(records: any[], assocName: string, modelClass: any) {
+async function eagerLoadBelongsTo(
+	records: any[],
+	assocName: string,
+	modelClass: any,
+	scope: ConnectionScope | null
+) {
 	const config = modelClass.belongsTo[assocName];
 	const foreignKey = resolveBelongsToForeignKey(assocName, config);
 
@@ -89,7 +100,7 @@ async function eagerLoadBelongsTo(records: any[], assocName: string, modelClass:
 	}
 
 	// Batch load by primary key of related model
-	const RelatedModel = config.model();
+	const RelatedModel = bindModel(config.model(), scope);
 	const relatedPk = RelatedModel.primaryKey;
 	const allRelated = await RelatedModel.where({}).whereIn(relatedPk, fkValues).all();
 
@@ -105,7 +116,12 @@ async function eagerLoadBelongsTo(records: any[], assocName: string, modelClass:
 	}
 }
 
-async function eagerLoadHasOne(records: any[], assocName: string, modelClass: any) {
+async function eagerLoadHasOne(
+	records: any[],
+	assocName: string,
+	modelClass: any,
+	scope: ConnectionScope | null
+) {
 	const config = modelClass.hasOne[assocName];
 	const foreignKey = resolveHasOneForeignKey(modelClass.modelName, config);
 	const pk = modelClass.primaryKey;
@@ -115,7 +131,7 @@ async function eagerLoadHasOne(records: any[], assocName: string, modelClass: an
 	if (ownerIds.length === 0) return;
 
 	// Batch load
-	const RelatedModel = config.model();
+	const RelatedModel = bindModel(config.model(), scope);
 	const allRelated = await RelatedModel.where({}).whereIn(foreignKey, ownerIds).all();
 
 	// Index by FK (take first match for each owner)
@@ -133,7 +149,12 @@ async function eagerLoadHasOne(records: any[], assocName: string, modelClass: an
 	}
 }
 
-async function eagerLoadThrough(records: any[], assocName: string, modelClass: any) {
+async function eagerLoadThrough(
+	records: any[],
+	assocName: string,
+	modelClass: any,
+	scope: ConnectionScope | null
+) {
 	const config = modelClass.hasMany[assocName];
 	const throughAssocName = config.through;
 	const throughConfig = modelClass.hasMany[throughAssocName];
@@ -144,7 +165,7 @@ async function eagerLoadThrough(records: any[], assocName: string, modelClass: a
 	if (ownerIds.length === 0) return;
 
 	// Step 2: Batch load intermediaries
-	const ThroughModel = throughConfig.model();
+	const ThroughModel = bindModel(throughConfig.model(), scope);
 	const throughFK = resolveHasManyForeignKey(modelClass.modelName, throughConfig);
 	const intermediaries = await ThroughModel.where({}).whereIn(throughFK, ownerIds).all();
 
@@ -157,7 +178,7 @@ async function eagerLoadThrough(records: any[], assocName: string, modelClass: a
 
 	// Step 3: Batch load targets
 	const intermediaryIds = intermediaries.map((r: any) => r._data[ThroughModel.primaryKey]);
-	const TargetModel = config.model();
+	const TargetModel = bindModel(config.model(), scope);
 	const targetFK = resolveHasManyForeignKey(ThroughModel.modelName, config);
 	const targets = await TargetModel.where({}).whereIn(targetFK, intermediaryIds).all();
 
@@ -196,7 +217,12 @@ async function eagerLoadThrough(records: any[], assocName: string, modelClass: a
  * Eager load HABTM associations via join table.
  * Uses two batch queries: one for the join table, one for target records.
  */
-async function eagerLoadHABTM(records: any[], assocName: string, modelClass: any) {
+async function eagerLoadHABTM(
+	records: any[],
+	assocName: string,
+	modelClass: any,
+	scope: ConnectionScope | null
+) {
 	const config = modelClass.hasAndBelongsToMany[assocName];
 	const resolved = resolveHABTMConfig(modelClass, config);
 	const pk = modelClass.primaryKey;
@@ -206,7 +232,7 @@ async function eagerLoadHABTM(records: any[], assocName: string, modelClass: any
 	if (ownerIds.length === 0) return;
 
 	// Batch query join table using drizzle sql template
-	const db = getGlobalConnection();
+	const db = requireScope(scope).session();
 	const fkCol = toSnakeCase(resolved.foreignKey);
 	const assocFkCol = toSnakeCase(resolved.associationForeignKey);
 
@@ -227,7 +253,7 @@ async function eagerLoadHABTM(records: any[], assocName: string, modelClass: any
 	}
 
 	// Batch load target records
-	const TargetModel = config.model();
+	const TargetModel = bindModel(config.model(), scope);
 	const targets = await TargetModel.where({}).whereIn(TargetModel.primaryKey, allTargetIds).all();
 
 	// Index targets by PK

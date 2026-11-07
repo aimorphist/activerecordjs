@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Model } from './model';
-import { setGlobalConnection } from './connection';
+import { setGlobalConnection } from './node';
 import { usersTable } from './fixtures/schema';
 
 // Mock database (same pattern as model.test.ts)

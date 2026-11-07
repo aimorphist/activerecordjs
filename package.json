@@ -5,7 +5,9 @@
 	"type": "module",
 	"description": "ActiveRecord ergonomics for TypeScript, built on Drizzle.",
 	"exports": {
-		".": "./src/index.ts"
+		".": "./src/index.ts",
+		"./postgres-js": "./src/postgres-js.ts",
+		"./node": "./src/node.ts"
 	},
 	"scripts": {
 		"test": "vitest run",

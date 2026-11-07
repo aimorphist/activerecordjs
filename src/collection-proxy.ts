@@ -1,5 +1,7 @@
+import { sql } from 'drizzle-orm';
 import type { HasManyConfig } from './types';
 import { resolveHasManyForeignKey, resolveBelongsToForeignKey } from './associations';
+import { bindModel, requireScope, scopeOf } from './session';
 
 /**
  * CollectionProxy wraps a hasMany association.
@@ -18,6 +20,11 @@ export class CollectionProxy<T> implements PromiseLike<T[]> {
 		this.associationName = associationName;
 		this.config = config;
 		this.parentModelName = parentModelName;
+	}
+
+	/** Bind a related class to the owner's captured scope. */
+	private bound(modelClass: any): any {
+		return bindModel(modelClass, scopeOf(this.owner));
 	}
 
 	/**
@@ -47,7 +54,7 @@ export class CollectionProxy<T> implements PromiseLike<T[]> {
 			return [];
 		}
 
-		const RelatedModel = this.config.model();
+		const RelatedModel = this.bound(this.config.model());
 		return RelatedModel.where({ [foreignKey]: primaryKeyValue }).all();
 	}
 
@@ -74,13 +81,13 @@ export class CollectionProxy<T> implements PromiseLike<T[]> {
 		const ownerPK = this.owner._data[ModelClass.primaryKey];
 		if (ownerPK == null) return [];
 
-		const ThroughModel = throughConfig.model();
+		const ThroughModel = this.bound(throughConfig.model());
 		const intermediaries = await ThroughModel.where({ [throughFK]: ownerPK }).all();
 		if (intermediaries.length === 0) return [];
 
 		// Step 2: Load target records via intermediary
 		const intermediaryIds = intermediaries.map((r: any) => r._data[ThroughModel.primaryKey]);
-		const TargetModel = this.config.model();
+		const TargetModel = this.bound(this.config.model());
 
 		// The FK on the target points to the intermediary model
 		const targetFK = resolveHasManyForeignKey(ThroughModel.modelName, this.config);
@@ -115,7 +122,7 @@ export class CollectionProxy<T> implements PromiseLike<T[]> {
 			return 0;
 		}
 
-		const RelatedModel = this.config.model();
+		const RelatedModel = this.bound(this.config.model());
 		return RelatedModel.where({ [foreignKey]: primaryKeyValue }).count();
 	}
 
@@ -127,7 +134,7 @@ export class CollectionProxy<T> implements PromiseLike<T[]> {
 		const ModelClass = this.owner.constructor;
 		const primaryKeyValue = this.owner._data[ModelClass.primaryKey];
 
-		const RelatedModel = this.config.model();
+		const RelatedModel = this.bound(this.config.model());
 		const instance = RelatedModel.build({
 			...attrs,
 			[foreignKey]: primaryKeyValue
@@ -155,7 +162,7 @@ export class CollectionProxy<T> implements PromiseLike<T[]> {
 		const ModelClass = this.owner.constructor;
 		const primaryKeyValue = this.owner._data[ModelClass.primaryKey];
 
-		const RelatedModel = this.config.model();
+		const RelatedModel = this.bound(this.config.model());
 		const instance = await RelatedModel.create({
 			...attrs,
 			[foreignKey]: primaryKeyValue
@@ -200,17 +207,15 @@ export class CollectionProxy<T> implements PromiseLike<T[]> {
 
 		if (primaryKeyValue == null) return [];
 
-		const RelatedModel = this.config.model();
+		const RelatedModel = this.bound(this.config.model());
 		const pk = RelatedModel.primaryKey;
 		const fkCol = this.toSnakeCase(foreignKey);
 		const pkCol = this.toSnakeCase(pk);
 		const tableName = RelatedModel.tableName;
 
 		// Efficient: only SELECT the PK column, not full records
-		const { getGlobalConnection } = await import('./connection');
-		const { sql } = await import('drizzle-orm');
-		const db = getGlobalConnection();
-		const results = await db.execute(
+		const db = requireScope(scopeOf(this.owner)).session();
+		const results: any = await db.execute(
 			sql`SELECT ${sql.raw(pkCol)} FROM ${sql.raw(tableName)}
 				WHERE ${sql.raw(fkCol)} = ${primaryKeyValue}`
 		);
@@ -235,7 +240,7 @@ export class CollectionProxy<T> implements PromiseLike<T[]> {
 	 * Check if collection includes a specific record (by primary key).
 	 */
 	async includes(record: any): Promise<boolean> {
-		const RelatedModel = this.config.model();
+		const RelatedModel = this.bound(this.config.model());
 		const pk = RelatedModel.primaryKey;
 		const recordId = record._data?.[pk] ?? record[pk] ?? record;
 
@@ -257,7 +262,7 @@ export class CollectionProxy<T> implements PromiseLike<T[]> {
 		const ModelClass = this.owner.constructor;
 		const primaryKeyValue = this.owner._data[ModelClass.primaryKey];
 
-		const RelatedModel = this.config.model();
+		const RelatedModel = this.bound(this.config.model());
 		return RelatedModel.where({ [foreignKey]: primaryKeyValue }).where(conditions);
 	}
 

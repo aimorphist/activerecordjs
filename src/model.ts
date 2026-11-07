@@ -1,8 +1,13 @@
 import { eq, desc, asc, getTableName, getTableColumns } from 'drizzle-orm';
 import type { PgTable } from 'drizzle-orm/pg-core';
-import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { z, ZodSchema } from 'zod';
-import { getGlobalConnection, setGlobalConnection } from './connection';
+import {
+	captureScope,
+	requireScope,
+	scopeOf,
+	type ConnectionScope,
+	type PgSession
+} from './session';
 import { RecordNotFoundError, ValidationError } from './errors';
 import { QueryBuilder } from './query-builder';
 import { loadBelongsTo, loadHasOne, processDependentAssociations } from './associations';
@@ -86,7 +91,12 @@ type ModelStatic = {
 	new (attrs?: Record<string, unknown>, persisted?: boolean): any;
 };
 
-export function Model<T extends PgTable>(table: T) {
+/**
+ * Build a model class for table. With scope, the class is closed over it
+ * (the core-only path; prefer `scope.model(table)`). Without scope, calls
+ * resolve the ambient scope the node entry binds, and throw when none is bound.
+ */
+export function Model<T extends PgTable>(table: T, scope: ConnectionScope | null = null) {
 	const conventions = detectConventions(table);
 
 	const ModelClass = class {
@@ -98,6 +108,10 @@ export function Model<T extends PgTable>(table: T) {
 		_persisted: boolean;
 		_errors: Record<string, string[]> = {};
 		_associations: Record<string, unknown> = {};
+		_scope: ConnectionScope | null;
+
+		// Scope this class is bound to (null: resolve the ambient scope per call)
+		static connectionScope: ConnectionScope | null = scope;
 
 		// Static metadata
 		static table = table;
@@ -126,9 +140,15 @@ export function Model<T extends PgTable>(table: T) {
 		static hasOne: Record<string, any> = {};
 		static hasAndBelongsToMany: Record<string, any> = {};
 
-		constructor(attrs: Record<string, unknown> = {}, persisted = false) {
+		constructor(
+			attrs: Record<string, unknown> = {},
+			persisted = false,
+			instanceScope: ConnectionScope | null = null
+		) {
 			this._data = { ...attrs };
 			this._persisted = persisted;
+			// Keep the scope this instance was created under; captured scope beats a later ambient one.
+			this._scope = instanceScope ?? captureScope((new.target as any).connectionScope);
 
 			// Return Proxy for dynamic attribute access
 			return new Proxy(this, {
@@ -278,7 +298,7 @@ export function Model<T extends PgTable>(table: T) {
 		async save(options: SaveOptions = {}): Promise<this> {
 			const { validate = true } = options;
 			const ModelClass = this.constructor as ModelStatic;
-			const db = getGlobalConnection();
+			const scope = requireScope(scopeOf(this));
 			const { primaryKey, timestamps } = ModelClass;
 
 			// Run validations unless explicitly skipped
@@ -303,7 +323,7 @@ export function Model<T extends PgTable>(table: T) {
 				const updateData = { ...this._data };
 				delete updateData[primaryKey];
 
-				await (db as any)
+				await (scope.session() as any)
 					.update(ModelClass.table)
 					.set(updateData)
 					.where(eq((ModelClass.table as any)[primaryKey], id));
@@ -319,7 +339,10 @@ export function Model<T extends PgTable>(table: T) {
 					this._data[timestamps.createdAt] = new Date();
 				}
 
-				const [result] = await (db as any).insert(ModelClass.table).values(this._data).returning();
+				const [result] = await (scope.session() as any)
+					.insert(ModelClass.table)
+					.values(this._data)
+					.returning();
 
 				Object.assign(this._data, result);
 				this._persisted = true;
@@ -343,7 +366,7 @@ export function Model<T extends PgTable>(table: T) {
 			if (!this._persisted) return;
 
 			const ModelClass = this.constructor as ModelStatic;
-			const db = getGlobalConnection();
+			const scope = requireScope(scopeOf(this));
 			const { primaryKey } = ModelClass;
 			const id = this._data[primaryKey] as number;
 
@@ -353,7 +376,7 @@ export function Model<T extends PgTable>(table: T) {
 			// Process dependent associations (restrict/destroy/nullify)
 			await processDependentAssociations(this);
 
-			await (db as any)
+			await (scope.session() as any)
 				.delete(ModelClass.table)
 				.where(eq((ModelClass.table as any)[primaryKey], id));
 
@@ -374,7 +397,7 @@ export function Model<T extends PgTable>(table: T) {
 			}
 
 			const ModelClass = this.constructor as ModelStatic;
-			const db = getGlobalConnection();
+			const db = requireScope(scopeOf(this)).session();
 			const { primaryKey } = ModelClass;
 			const id = this._data[primaryKey] as number;
 
@@ -398,7 +421,8 @@ export function Model<T extends PgTable>(table: T) {
 
 		// Static methods
 		static async find(id: number): Promise<InstanceType<typeof this>> {
-			const db = getGlobalConnection();
+			const scope = requireScope(this.connectionScope);
+			const db = scope.session();
 			const pk = this.primaryKey;
 
 			const [result] = await (db as any)
@@ -411,13 +435,14 @@ export function Model<T extends PgTable>(table: T) {
 				throw new RecordNotFoundError(this.tableName, id);
 			}
 
-			return new this(result, true) as InstanceType<typeof this>;
+			return new this(result, true, captureScope(this.connectionScope)) as InstanceType<typeof this>;
 		}
 
 		static async findBy(
 			attrs: Partial<Record<string, unknown>>
 		): Promise<InstanceType<typeof this> | null> {
-			const db = getGlobalConnection();
+			const scope = requireScope(this.connectionScope);
+			const db = scope.session();
 
 			let query: any = (db as any).select().from(this.table);
 
@@ -429,17 +454,19 @@ export function Model<T extends PgTable>(table: T) {
 
 			if (!result) return null;
 
-			return new this(result, true) as InstanceType<typeof this>;
+			return new this(result, true, captureScope(this.connectionScope)) as InstanceType<typeof this>;
 		}
 
 		static async all(): Promise<InstanceType<typeof this>[]> {
-			const db = getGlobalConnection();
-			const results = await (db as any).select().from(this.table);
-			return results.map((r: any) => new this(r, true) as InstanceType<typeof this>);
+			const scope = requireScope(this.connectionScope);
+			const results = await (scope.session() as any).select().from(this.table);
+			const captured = captureScope(this.connectionScope);
+			return results.map((r: any) => new this(r, true, captured) as InstanceType<typeof this>);
 		}
 
 		static async first(): Promise<InstanceType<typeof this> | null> {
-			const db = getGlobalConnection();
+			const scope = requireScope(this.connectionScope);
+			const db = scope.session();
 			const pk = this.primaryKey;
 
 			const [result] = await (db as any)
@@ -450,11 +477,12 @@ export function Model<T extends PgTable>(table: T) {
 
 			if (!result) return null;
 
-			return new this(result, true) as InstanceType<typeof this>;
+			return new this(result, true, captureScope(this.connectionScope)) as InstanceType<typeof this>;
 		}
 
 		static async last(): Promise<InstanceType<typeof this> | null> {
-			const db = getGlobalConnection();
+			const scope = requireScope(this.connectionScope);
+			const db = scope.session();
 			const pk = this.primaryKey;
 
 			const [result] = await (db as any)
@@ -465,7 +493,7 @@ export function Model<T extends PgTable>(table: T) {
 
 			if (!result) return null;
 
-			return new this(result, true) as InstanceType<typeof this>;
+			return new this(result, true, captureScope(this.connectionScope)) as InstanceType<typeof this>;
 		}
 
 		static async create(
@@ -487,7 +515,8 @@ export function Model<T extends PgTable>(table: T) {
 		}
 
 		static async destroy(id: number): Promise<void> {
-			const db = getGlobalConnection();
+			const scope = requireScope(this.connectionScope);
+			const db = scope.session();
 			const pk = this.primaryKey;
 
 			await (db as any).delete(this.table).where(eq((this.table as any)[pk], id));
@@ -510,7 +539,7 @@ export function Model<T extends PgTable>(table: T) {
 			const ModelClass = this;
 			const builder = new QueryBuilder<T, InstanceType<typeof this>>(
 				this.table,
-				(data, persisted) => new ModelClass(data, persisted) as InstanceType<typeof this>,
+				(data, persisted, scope) => new ModelClass(data, persisted, scope) as InstanceType<typeof this>,
 				this
 			);
 			if (typeof conditionsOrSql === 'string') {
@@ -526,7 +555,7 @@ export function Model<T extends PgTable>(table: T) {
 			const ModelClass = this;
 			const builder = new QueryBuilder<T, InstanceType<typeof this>>(
 				this.table,
-				(data, persisted) => new ModelClass(data, persisted) as InstanceType<typeof this>,
+				(data, persisted, scope) => new ModelClass(data, persisted, scope) as InstanceType<typeof this>,
 				this
 			);
 			return builder.order(column, direction);
@@ -536,7 +565,7 @@ export function Model<T extends PgTable>(table: T) {
 			const ModelClass = this;
 			const builder = new QueryBuilder<T, InstanceType<typeof this>>(
 				this.table,
-				(data, persisted) => new ModelClass(data, persisted) as InstanceType<typeof this>,
+				(data, persisted, scope) => new ModelClass(data, persisted, scope) as InstanceType<typeof this>,
 				this
 			);
 			return builder.limit(n);
@@ -546,7 +575,7 @@ export function Model<T extends PgTable>(table: T) {
 			const ModelClass = this;
 			const builder = new QueryBuilder<T, InstanceType<typeof this>>(
 				this.table,
-				(data, persisted) => new ModelClass(data, persisted) as InstanceType<typeof this>,
+				(data, persisted, scope) => new ModelClass(data, persisted, scope) as InstanceType<typeof this>,
 				this
 			);
 			return builder.offset(n);
@@ -556,7 +585,7 @@ export function Model<T extends PgTable>(table: T) {
 			const ModelClass = this;
 			const builder = new QueryBuilder<T, InstanceType<typeof this>>(
 				this.table,
-				(data, persisted) => new ModelClass(data, persisted) as InstanceType<typeof this>,
+				(data, persisted, scope) => new ModelClass(data, persisted, scope) as InstanceType<typeof this>,
 				this
 			);
 			return builder.includes(...associations);
@@ -566,7 +595,7 @@ export function Model<T extends PgTable>(table: T) {
 			const ModelClass = this;
 			const builder = new QueryBuilder<T, InstanceType<typeof this>>(
 				this.table,
-				(data, persisted) => new ModelClass(data, persisted) as InstanceType<typeof this>,
+				(data, persisted, scope) => new ModelClass(data, persisted, scope) as InstanceType<typeof this>,
 				this
 			);
 			return builder.count();
@@ -576,7 +605,7 @@ export function Model<T extends PgTable>(table: T) {
 			const ModelClass = this;
 			let builder = new QueryBuilder<T, InstanceType<typeof this>>(
 				this.table,
-				(data, persisted) => new ModelClass(data, persisted) as InstanceType<typeof this>,
+				(data, persisted, scope) => new ModelClass(data, persisted, scope) as InstanceType<typeof this>,
 				this
 			);
 			if (conditions) {
@@ -601,8 +630,8 @@ export function Model<T extends PgTable>(table: T) {
 			return this.findOrCreate(findAttrs, createAttrs);
 		}
 
-		static async query<R>(fn: (table: T, db: PostgresJsDatabase) => Promise<R>): Promise<R> {
-			const db = getGlobalConnection();
+		static async query<R>(fn: (table: T, db: PgSession) => Promise<R>): Promise<R> {
+			const db = requireScope(this.connectionScope).session();
 			return fn(this.table, db);
 		}
 	};
@@ -611,9 +640,4 @@ export function Model<T extends PgTable>(table: T) {
 	Object.defineProperty(ModelClass, 'name', { value: conventions.modelName });
 
 	return ModelClass;
-}
-
-export function createActiveRecordJS(db: PostgresJsDatabase): { Model: typeof Model } {
-	setGlobalConnection(db);
-	return { Model };
 }

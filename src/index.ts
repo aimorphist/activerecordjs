@@ -1,6 +1,9 @@
-export { Model, createActiveRecordJS } from './model';
+// Core entry. No Node builtin, no driver. Drivers live on the `postgres-js`
+// entry; the Node ambient binding lives on the `node` entry.
+export { Model } from './model';
 export { QueryBuilder } from './query-builder';
-export { createConnection, setGlobalConnection } from './connection';
+export { createScope, type CreateScopeOptions } from './scope';
+export { LeaseToken, type ConnectionScope, type PgSession, type BoundModel } from './session';
 export * from './errors';
 export type * from './types';
 export { CollectionProxy } from './collection-proxy';

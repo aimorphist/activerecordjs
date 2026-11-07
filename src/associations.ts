@@ -5,8 +5,8 @@ import type {
 	HasAndBelongsToManyConfig
 } from './types';
 import { sql } from 'drizzle-orm';
-import { getGlobalConnection } from './connection';
 import { DependentRestrictError } from './errors';
+import { bindModel, requireScope, scopeOf } from './session';
 
 /**
  * Convert camelCase to snake_case for use in raw SQL column references.
@@ -74,7 +74,8 @@ export async function loadBelongsTo(
 		return null; // No foreign key set
 	}
 
-	const RelatedModel = config.model();
+	// Related lookup runs on the owner's captured scope, not the related class's.
+	const RelatedModel = bindModel(config.model(), scopeOf(instance));
 	return RelatedModel.find(foreignKeyValue);
 }
 
@@ -104,7 +105,7 @@ export async function loadHasOne(
 
 	if (primaryKeyValue == null) return null;
 
-	const RelatedModel = config.model();
+	const RelatedModel = bindModel(config.model(), scopeOf(instance));
 	return RelatedModel.findBy({ [foreignKey]: primaryKeyValue });
 }
 
@@ -161,6 +162,7 @@ export async function processDependentAssociations(instance: any): Promise<void>
 	const pk = ModelClass.primaryKey;
 	const ownerPK = instance._data[pk];
 	if (ownerPK == null) return;
+	const ownerScope = scopeOf(instance);
 
 	// Collect all associations with dependent option
 	const dependentAssocs: Array<{
@@ -196,7 +198,7 @@ export async function processDependentAssociations(instance: any): Promise<void>
 				? resolveHasManyForeignKey(ModelClass.modelName, assoc.config)
 				: resolveHasOneForeignKey(ModelClass.modelName, assoc.config);
 
-		const RelatedModel = assoc.config.model();
+		const RelatedModel = bindModel(assoc.config.model(), ownerScope);
 		const count = await RelatedModel.where({ [fk]: ownerPK }).count();
 		if (count > 0) {
 			throw new DependentRestrictError(ModelClass.modelName, assoc.name);
@@ -212,7 +214,7 @@ export async function processDependentAssociations(instance: any): Promise<void>
 				? resolveHasManyForeignKey(ModelClass.modelName, assoc.config)
 				: resolveHasOneForeignKey(ModelClass.modelName, assoc.config);
 
-		const RelatedModel = assoc.config.model();
+		const RelatedModel = bindModel(assoc.config.model(), ownerScope);
 		const children = await RelatedModel.where({ [fk]: ownerPK }).all();
 
 		// Destroy each child (triggers THEIR dependent processing recursively)
@@ -230,9 +232,9 @@ export async function processDependentAssociations(instance: any): Promise<void>
 				? resolveHasManyForeignKey(ModelClass.modelName, assoc.config)
 				: resolveHasOneForeignKey(ModelClass.modelName, assoc.config);
 
-		const RelatedModel = assoc.config.model();
+		const RelatedModel = bindModel(assoc.config.model(), ownerScope);
 		// Batch update: SET fk = NULL WHERE fk = ownerPK
-		const db = getGlobalConnection();
+		const db = requireScope(ownerScope).session();
 		await db.execute(
 			sql`UPDATE ${sql.raw(RelatedModel.tableName)}
           SET ${sql.raw(toSnakeCase(fk))} = NULL

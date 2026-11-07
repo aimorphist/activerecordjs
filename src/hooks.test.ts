@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Model, type HookFunction } from './model';
 import { usersTable } from './fixtures/schema';
-import { setGlobalConnection } from './connection';
+import { setGlobalConnection } from './node';
 
 // Mock database
 function createMockDb() {

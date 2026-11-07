@@ -49,3 +49,29 @@ export class DependentRestrictError extends ActiveRecordJSError {
 		this.name = 'DependentRestrictError';
 	}
 }
+
+/** No captured scope and no ambient scope: thrown before any driver call. */
+export class NoConnectionScopeError extends ActiveRecordJSError {
+	constructor() {
+		super(
+			'No connection scope. Use scope.model(table) from core, or bind one on Node with createActiveRecordJS(db) / runWithConnection(db, fn) from the node entry.'
+		);
+		this.name = 'NoConnectionScopeError';
+	}
+}
+
+/** Work on a scope after close() or after its transaction lease retired. */
+export class ScopeClosedError extends ActiveRecordJSError {
+	constructor(reason: string) {
+		super(`Connection scope is not usable: ${reason}`);
+		this.name = 'ScopeClosedError';
+	}
+}
+
+/** transaction() on a callback scope, or on a root whose transaction is still open. */
+export class TransactionReentryError extends ActiveRecordJSError {
+	constructor(reason: string) {
+		super(`Nested transaction rejected: ${reason}. No flatten, no savepoint.`);
+		this.name = 'TransactionReentryError';
+	}
+}

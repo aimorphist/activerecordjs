@@ -1,7 +1,7 @@
 import { drizzle, type PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { sql } from 'drizzle-orm';
-import { setGlobalConnection, runWithConnection } from './connection';
+import { setGlobalConnection, runWithConnection } from './node';
 
 const connectionString =
 	process.env.TEST_DATABASE_URL ||

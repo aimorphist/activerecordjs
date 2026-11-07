@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Model } from './model';
-import { setGlobalConnection } from './connection';
+import { setGlobalConnection } from './node';
 import { RecordNotFoundError } from './errors';
 import { usersTable } from './fixtures/schema';
 

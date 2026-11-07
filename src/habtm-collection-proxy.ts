@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm';
 import type { HasAndBelongsToManyConfig } from './types';
 import { resolveHABTMConfig, toSnakeCase } from './associations';
-import { getGlobalConnection } from './connection';
+import { bindModel, requireScope, scopeOf } from './session';
 
 /**
  * HABTMCollectionProxy wraps a many-to-many association via join table.
@@ -37,6 +37,15 @@ export class HABTMCollectionProxy<T> implements PromiseLike<T[]> {
 		this.resolved = resolveHABTMConfig(ownerModelClass, config);
 	}
 
+	/** The owner's captured scope session; throws before driver I/O when none resolves. */
+	private session() {
+		return requireScope(scopeOf(this.owner)).session();
+	}
+
+	private targetModel(): any {
+		return bindModel(this.config.model(), scopeOf(this.owner));
+	}
+
 	private get ownerPK(): unknown {
 		return this.owner._data[this.ownerModelClass.primaryKey];
 	}
@@ -44,7 +53,7 @@ export class HABTMCollectionProxy<T> implements PromiseLike<T[]> {
 	private async loadTargetIds(): Promise<number[]> {
 		if (this.ownerPK == null) return [];
 
-		const db = getGlobalConnection();
+		const db = this.session();
 		const fkCol = toSnakeCase(this.resolved.foreignKey);
 		const assocFkCol = toSnakeCase(this.resolved.associationForeignKey);
 		const result = await db.execute(
@@ -64,7 +73,7 @@ export class HABTMCollectionProxy<T> implements PromiseLike<T[]> {
 			return [];
 		}
 
-		const TargetModel = this.config.model();
+		const TargetModel = this.targetModel();
 		const result = await TargetModel.where({}).whereIn(TargetModel.primaryKey, targetIds).all();
 		this.owner._associations[this.associationName] = result;
 		return result;
@@ -78,7 +87,7 @@ export class HABTMCollectionProxy<T> implements PromiseLike<T[]> {
 	}
 
 	async add(record: any): Promise<void> {
-		const db = getGlobalConnection();
+		const db = this.session();
 		const targetPK = record._data[this.config.model().primaryKey];
 		const fkCol = toSnakeCase(this.resolved.foreignKey);
 		const assocFkCol = toSnakeCase(this.resolved.associationForeignKey);
@@ -89,7 +98,7 @@ export class HABTMCollectionProxy<T> implements PromiseLike<T[]> {
 	}
 
 	async remove(record: any): Promise<void> {
-		const db = getGlobalConnection();
+		const db = this.session();
 		const targetPK = record._data[this.config.model().primaryKey];
 		const fkCol = toSnakeCase(this.resolved.foreignKey);
 		const assocFkCol = toSnakeCase(this.resolved.associationForeignKey);
@@ -102,7 +111,7 @@ export class HABTMCollectionProxy<T> implements PromiseLike<T[]> {
 	async count(): Promise<number> {
 		if (this.ownerPK == null) return 0;
 
-		const db = getGlobalConnection();
+		const db = this.session();
 		const fkCol = toSnakeCase(this.resolved.foreignKey);
 		const result = await db.execute(
 			sql`SELECT COUNT(*) as count FROM ${sql.raw(this.resolved.joinTable)} WHERE ${sql.raw(fkCol)} = ${this.ownerPK}`
@@ -121,10 +130,10 @@ export class HABTMCollectionProxy<T> implements PromiseLike<T[]> {
 	async includes(record: any): Promise<boolean> {
 		if (this.ownerPK == null) return false;
 
-		const TargetModel = this.config.model();
+		const TargetModel = this.targetModel();
 		const targetPK =
 			record._data?.[TargetModel.primaryKey] ?? record[TargetModel.primaryKey] ?? record;
-		const db = getGlobalConnection();
+		const db = this.session();
 		const fkCol = toSnakeCase(this.resolved.foreignKey);
 		const assocFkCol = toSnakeCase(this.resolved.associationForeignKey);
 		const result = await db.execute(
